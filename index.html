@@ -197,6 +197,16 @@ input:focus, select:focus, textarea:focus { ring: none; }
   /* Floating add button */
   .fab-wrap { right: 16px !important; bottom: 16px !important; }
   .fab { width: 52px !important; height: 52px !important; font-size: 22px !important; }
+  /* Mobile: don’t let the action button rail steal layout width */
+  .item-card .hover-actions { position: absolute; top: 12px; right: 12px; opacity: 1; pointer-events: auto; }
+  .item-card .hover-actions { display: flex; }
+  /* Keep buttons subtle, but visible */
+  .item-card .hover-actions button { background: #f5f3f0 !important; }
+
+  /* Mobile: bring title + tags together and reduce dead space */
+  .item-card .item-title { margin-bottom: 8px !important; }
+  .item-card .tags-row { margin-bottom: 10px !important; }
+
 }
 
 </style>
