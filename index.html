@@ -155,6 +155,11 @@ input:focus, select:focus, textarea:focus { ring: none; }
 .fade-in-delay-2 { animation-delay: 0.1s; }
 .fade-in-delay-3 { animation-delay: 0.15s; }
 .fade-in-delay-4 { animation-delay: 0.2s; }
+
+/* Show action buttons on touch devices (no hover) */
+@media (hover: none) and (pointer: coarse) {
+  .hover-actions { opacity: 1 !important; }
+}
 </style>
 </head>
 <body>
@@ -744,26 +749,6 @@ const ItemCard = ({ item, settings, onToggle, onEdit, onDelete, onAddComment, on
                 {showCategoryTag && (
                   <span className="tag">{((CATEGORY_INFO[item.category] && CATEGORY_INFO[item.category].emoji) || '')} {((CATEGORY_INFO[item.category] && CATEGORY_INFO[item.category].label) || item.category)}</span>
                 )}
-
-                <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-                  <button onClick={() => onTogglePin && onTogglePin(item.id)} title={item.pinnedFocus ? "Unpin from Focus" : "Pin to Focus"}
-                    style={{ padding: '6px', border: 'none', background: item.pinnedFocus ? '#e8ebe7' : '#f5f3f0', borderRadius: 8, cursor: 'pointer', color: '#78716c', fontSize: 14 }}>📌</button>
-
-                  <button onClick={() => {
-                    const c = window.prompt('Add a comment');
-                    if (c && c.trim()) onAddComment(item.id, { text: c.trim(), author: commentAuthor, timestamp: new Date().toISOString() });
-                  }}
-                    title="Comment"
-                    style={{ padding: '6px', border: 'none', background: '#f5f3f0', borderRadius: 8, cursor: 'pointer', color: '#78716c', fontSize: 14, position: 'relative' }}>
-                    💬{item.comments && item.comments.length > 0 && (
-                      <span style={{ position: 'absolute', top: 2, right: 2, width: 6, height: 6, borderRadius: '50%', background: '#6b7869' }} />
-                    )}
-                  </button>
-                  <button onClick={() => onEdit(item)} title="Edit"
-                    style={{ padding: '6px', border: 'none', background: '#f5f3f0', borderRadius: 8, cursor: 'pointer', color: '#78716c', fontSize: 14 }}>✏️</button>
-                  <button onClick={() => onDelete(item.id)} title="Delete"
-                    style={{ padding: '6px', border: 'none', background: '#f5f3f0', borderRadius: 8, cursor: 'pointer', color: '#78716c', fontSize: 14 }}>🗑</button>
-                </div>
                 <PriorityTag priority={item.priority} />
                 {item.assignedTo && <span className="tag">{item.assignedTo}</span>}
               </div>
@@ -800,7 +785,9 @@ const ItemCard = ({ item, settings, onToggle, onEdit, onDelete, onAddComment, on
 
         {/* Action buttons */}
         <div style={{ display: 'flex', gap: 4, opacity: hover ? 1 : 0, transition: 'opacity 0.2s', flexShrink: 0 }}
-          className="md:flex">
+          className="md:flex hover-actions">
+          <button onClick={() => onTogglePin && onTogglePin(item.id)} title={item.pinnedFocus ? "Unpin from Focus" : "Pin to Focus"}
+            style={{ padding: '6px', border: 'none', background: item.pinnedFocus ? '#e8ebe7' : '#f5f3f0', borderRadius: 8, cursor: 'pointer', color: '#78716c', fontSize: 14 }}>📌</button>
           <button onClick={() => setShowComments(!showComments)}
             style={{ padding: '6px', border: 'none', background: '#f5f3f0', borderRadius: 8, cursor: 'pointer', color: '#78716c', fontSize: 14, position: 'relative' }}>
             💬{item.comments && item.comments.length > 0 && (
