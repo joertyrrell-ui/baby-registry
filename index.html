@@ -171,22 +171,32 @@ input:focus, select:focus, textarea:focus { ring: none; }
 
 /* Mobile tidy up */
 @media (max-width: 520px) {
-  .item-card { padding: 14px 12px !important; }
-  .item-card .item-title { font-size: 22px !important; line-height: 1.1 !important; }
-  .item-card .tags-row { gap: 6px !important; margin-bottom: 8px !important; }
-  .item-card .tag { font-size: 11px !important; padding: 6px 10px !important; }
-  .item-card .check-box { width: 22px !important; height: 22px !important; border-radius: 7px !important; }
-  .item-card img { width: 44px !important; height: 44px !important; border-radius: 10px !important; }
-  .item-card .price-row { flex-wrap: wrap !important; gap: 10px !important; }
-  .item-card a { font-size: 12px !important; }
-  .tag { font-size: 12px !important; padding: 6px 10px !important; border-radius: 999px; }
+  /* Item cards */
+  .item-card { padding: 12px 12px !important; }
+  .item-title { font-size: 22px !important; line-height: 1.1 !important; }
+  .tags-row { gap: 6px !important; margin-bottom: 10px !important; }
+  .tag { font-size: 11px !important; padding: 6px 10px !important; border-radius: 999px !important; }
   .tag.category { display: none !important; }
+  .check-box { width: 22px !important; height: 22px !important; border-radius: 7px !important; }
+  img { max-width: 100%; }
+  .price-row { flex-direction: column !important; gap: 6px !important; align-items: flex-start !important; }
+  .price-row span { font-size: 12px !important; }
+  .item-card a { font-size: 12px !important; }
+
+  /* Slightly tighter serif spacing on small screens */
   .serif { letter-spacing: -0.01em; }
-  .item-title { font-size: 26px !important; line-height: 1.05 !important; }
-  .meta-line { font-size: 14px !important; }
-  .hover-actions button { width: 40px !important; height: 40px !important; border-radius: 14px !important; }
-  .item-card .hover-actions { opacity: 0; pointer-events: none; }
-  .item-card:focus .hover-actions { opacity: 1; pointer-events: auto; }
+
+  /* Make action buttons usable but smaller */
+  .hover-actions button { width: 38px !important; height: 38px !important; border-radius: 12px !important; }
+
+  /* Page layout */
+  .home-inner { padding: 24px 16px 0 !important; }
+  .home-top-grid { grid-template-columns: 1fr !important; margin-top: 18px !important; }
+  .home-overview-grid { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Floating add button */
+  .fab-wrap { right: 16px !important; bottom: 16px !important; }
+  .fab { width: 52px !important; height: 52px !important; font-size: 22px !important; }
 }
 
 </style>
@@ -1353,9 +1363,9 @@ const describeUpdate = (u) => {
   );
 
   return (
-    <div style={{ minHeight: '100vh', background: '#faf9f7', paddingBottom: 60 }}>
+    <div className="home-screen" style={{ minHeight: '100vh', background: '#faf9f7', paddingBottom: 60 }}>
       {/* Header */}
-      <div style={{ padding: '40px 24px 0', maxWidth: 720, margin: '0 auto' }}>
+      <div className="home-inner" style={{ padding: '40px 24px 0', maxWidth: 720, margin: '0 auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
           <div>
             <h1 className="serif fade-in" style={{ fontSize: 'clamp(40px, 8vw, 60px)', lineHeight: 1, letterSpacing: '-0.02em', color: '#44403c' }}>
@@ -1372,7 +1382,7 @@ const describeUpdate = (u) => {
         </div>
 
         {/* Due date & progress */}
-        <div className="fade-in fade-in-delay-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 28, marginBottom: 28 }}>
+        <div className="fade-in fade-in-delay-2 home-top-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 28, marginBottom: 28 }}>
           <div onClick={onOpenTimeline} style={{ background: 'white', border: '1px solid #ebe7e0', borderRadius: 20, padding: '20px', cursor: 'pointer' }}>
             <Label>Due Date</Label>
             <div className="serif" style={{ fontSize: 22, marginTop: 4 }}>{formatDate(settings.dueDate)}</div>
@@ -1517,7 +1527,7 @@ const describeUpdate = (u) => {
             <span className="serif" style={{ fontSize: 22, color: '#44403c' }}>Overview</span>
             <span style={{ fontSize: 12, color: '#a8a29e', marginLeft: 8 }}>tap to explore</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+          <div className="home-overview-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
             {catStats.map(({ cat, info, total, done, pct }) => (
               <div key={cat}
                 className="hover-lift transition-smooth"
@@ -1550,10 +1560,10 @@ const describeUpdate = (u) => {
       </div>
 
       {/* Add button */}
-      <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 20 }}>
-        <button onClick={() => onAdd(null)}
+      <div className="fab-wrap" style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 20 }}>
+        <button className="fab hover-lift transition-smooth" onClick={() => onAdd(null)}
           style={{ width: 56, height: 56, borderRadius: '50%', background: '#6b7869', border: 'none', color: 'white', fontSize: 24, cursor: 'pointer', boxShadow: '0 8px 24px rgba(107,120,105,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter' }}
-          className="hover-lift transition-smooth">
+          >
           +
         </button>
       </div>
