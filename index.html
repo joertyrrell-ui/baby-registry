@@ -619,8 +619,65 @@ const NameModal = ({ initialName, onSave, onClose }) => {
   );
 };
 
+
+// Month helpers
+const MONTH_NUM = { January:0, February:1, March:2, April:3, May:4, June:5, July:6, August:7, September:8, October:9, November:10, December:11 };
+
+const getAllowedMonths = (settings) => {
+  // Uses the dueDate year as the timeline year (so March-Aug are in the due year)
+  try {
+    const due = settings && settings.dueDate ? new Date(settings.dueDate) : new Date();
+    const year = due.getFullYear();
+    const now = new Date();
+
+    return MONTHS.filter(m => {
+      const mi = MONTH_NUM[m];
+      if (mi === undefined) return true;
+      // end of month
+      const end = new Date(year, mi + 1, 0, 23, 59, 59, 999);
+      return now.getTime() <= end.getTime();
+    });
+  } catch (e) {
+    return MONTHS;
+  }
+};
+
+const MonthTagSelect = ({ value, settings, onChange, disabled }) => {
+  const allowed = getAllowedMonths(settings);
+  // Ensure the current value is present so the select can render correctly
+  const options = allowed.includes(value) ? allowed : [value, ...allowed];
+
+  return (
+    <select
+      className="tag"
+      disabled={disabled}
+      value={value}
+      onChange={(e) => onChange && onChange(e.target.value)}
+      title="Change month"
+      style={{
+        border: 'none',
+        cursor: disabled ? 'default' : 'pointer',
+        appearance: 'none',
+        WebkitAppearance: 'none',
+        MozAppearance: 'none',
+        paddingRight: 18,
+        backgroundImage: disabled ? 'none' : 'linear-gradient(45deg, transparent 50%, #78716c 50%), linear-gradient(135deg, #78716c 50%, transparent 50%)',
+        backgroundPosition: disabled ? 'none' : 'calc(100% - 10px) 55%, calc(100% - 6px) 55%',
+        backgroundSize: disabled ? 'none' : '4px 4px, 4px 4px',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
+      {options.map(m => (
+        <option key={m} value={m} disabled={!allowed.includes(m) && m !== value}>
+          {m}
+        </option>
+      ))}
+    </select>
+  );
+};
+
 // Item Card (in category view)
-const ItemCard = ({ item, onToggle, onEdit, onDelete, onAddComment, celebrating }) => {
+const ItemCard = ({ item, settings, onToggle, onEdit, onDelete, onAddComment, onChangeMonth, onTogglePin, showCategoryTag, variant = 'card', celebrating }) => {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [commentAuthor, setCommentAuthor] = useState('Georgia');
@@ -650,10 +707,10 @@ const ItemCard = ({ item, onToggle, onEdit, onDelete, onAddComment, celebrating 
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
-        background: 'white',
-        border: '1px solid #ebe7e0',
-        borderRadius: 16,
-        padding: '16px',
+        background: variant === 'line' ? 'transparent' : 'white',
+        border: variant === 'line' ? 'none' : '1px solid #ebe7e0',
+        borderRadius: variant === 'line' ? 0 : 16,
+        padding: variant === 'line' ? '14px 0' : '16px',
         opacity: item.purchased ? 0.55 : 1,
         transition: 'all 0.3s',
         position: 'relative'
@@ -682,12 +739,19 @@ const ItemCard = ({ item, onToggle, onEdit, onDelete, onAddComment, celebrating 
                 {item.item}
               </div>
               <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 6 }}>
-                <span className="tag">{item.targetMonth}</span>
+                <MonthTagSelect value={item.targetMonth} settings={settings} onChange={(m) => onChangeMonth && onChangeMonth(item.id, m)} />
                 {item.mandatory && <span className="tag essential">Essential</span>}
+                {showCategoryTag && (
+                  <span className="tag">{((CATEGORY_INFO[item.category] && CATEGORY_INFO[item.category].emoji) || '')} {((CATEGORY_INFO[item.category] && CATEGORY_INFO[item.category].label) || item.category)}</span>
+                )}
+
                 <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                  <button onClick={() => onTogglePin && onTogglePin(item.id)} title={item.pinnedFocus ? "Unpin from Focus" : "Pin to Focus"}
+                    style={{ padding: '6px', border: 'none', background: item.pinnedFocus ? '#e8ebe7' : '#f5f3f0', borderRadius: 8, cursor: 'pointer', color: '#78716c', fontSize: 14 }}>📌</button>
+
                   <button onClick={() => {
                     const c = window.prompt('Add a comment');
-                    if (c && c.trim()) onAddComment(item.id, c.trim());
+                    if (c && c.trim()) onAddComment(item.id, { text: c.trim(), author: commentAuthor, timestamp: new Date().toISOString() });
                   }}
                     title="Comment"
                     style={{ padding: '6px', border: 'none', background: '#f5f3f0', borderRadius: 8, cursor: 'pointer', color: '#78716c', fontSize: 14, position: 'relative' }}>
@@ -719,8 +783,8 @@ const ItemCard = ({ item, onToggle, onEdit, onDelete, onAddComment, celebrating 
               {latestComment && !showComments && (
                 <div style={{ fontSize: 12, color: '#a8a29e', display: 'flex', alignItems: 'center', gap: 4 }}>
                   <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#8a9688' }} />
-                  <span style={{ fontWeight: 500, color: '#78716c' }}>{latestComment.author}:</span>
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{latestComment.text}</span>
+                  <span style={{ fontWeight: 500, color: '#78716c' }}>{typeof latestComment === 'string' ? '' : (latestComment.author || '')}:</span>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{typeof latestComment === 'string' ? latestComment : (latestComment.text || '')}</span>
                 </div>
               )}
 
@@ -782,7 +846,7 @@ const ItemCard = ({ item, onToggle, onEdit, onDelete, onAddComment, celebrating 
 };
 
 // Category View
-const CategoryView = ({ category, items, onBack, onToggle, onEdit, onDelete, onAddComment, onAdd, celebratingId }) => {
+const CategoryView = ({ category, items, settings, onBack, onToggle, onEdit, onDelete, onAddComment, onChangeMonth, onTogglePin, onAdd, celebratingId }) => {
   const [filterOpen, setFilterOpen] = useState(false);
   const [filter, setFilter] = useState({ search: '', mandatory: 'all', priority: 'all', purchased: 'all' });
   const [searchVal, setSearchVal] = useState('');
@@ -861,10 +925,13 @@ const CategoryView = ({ category, items, onBack, onToggle, onEdit, onDelete, onA
           <ItemCard
             key={item.id}
             item={item}
+            settings={settings}
             onToggle={onToggle}
             onEdit={onEdit}
             onDelete={onDelete}
             onAddComment={onAddComment}
+            onChangeMonth={onChangeMonth}
+            onTogglePin={onTogglePin}
             celebrating={celebratingId === item.id}
           />
         ))}
@@ -889,6 +956,142 @@ const CategoryView = ({ category, items, onBack, onToggle, onEdit, onDelete, onA
 };
 
 
+
+
+// Timeline View (all items grouped by month)
+const TimelineView = ({ items, settings, onBack, onToggle, onEdit, onDelete, onAddComment, onChangeMonth, onTogglePin, celebratingId }) => {
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filter, setFilter] = useState({ search: '', category: 'all', mandatory: 'all', purchased: 'no' });
+  const [searchVal, setSearchVal] = useState('');
+  const searchTimer = useRef(null);
+
+  const handleSearch = (v) => {
+    setSearchVal(v);
+    clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => setFilter(f => ({ ...f, search: v })), 250);
+  };
+
+  const monthIndex = (m) => {
+    const idx = MONTHS.indexOf(m);
+    return idx === -1 ? 999 : idx;
+  };
+
+  const filtered = useMemo(() => {
+    return items
+      .filter(i => {
+        if (filter.purchased === 'no' && i.purchased) return false;
+        if (filter.purchased === 'yes' && !i.purchased) return false;
+        if (filter.search && !(i.item || '').toLowerCase().includes(filter.search.toLowerCase())) return false;
+        if (filter.category !== 'all' && i.category !== filter.category) return false;
+        if (filter.mandatory === 'essential' && !i.mandatory) return false;
+        if (filter.mandatory === 'optional' && i.mandatory) return false;
+        return true;
+      })
+      .sort((a, b) => {
+        const ma = monthIndex(a.targetMonth);
+        const mb = monthIndex(b.targetMonth);
+        if (ma !== mb) return ma - mb;
+        const pa = PRIORITY_ORDER[a.priority] ?? 3;
+        const pb = PRIORITY_ORDER[b.priority] ?? 3;
+        if (pa !== pb) return pa - pb;
+        return (a.item || '').localeCompare(b.item || '');
+      });
+  }, [items, filter]);
+
+  const grouped = useMemo(() => {
+    const g = {};
+    filtered.forEach(i => { (g[i.targetMonth] ||= []).push(i); });
+    // Ensure consistent month order
+    const ordered = {};
+    MONTHS.forEach(m => { if (g[m] && g[m].length) ordered[m] = g[m]; });
+    // Any unknown months at end
+    Object.keys(g).forEach(m => { if (!ordered[m]) ordered[m] = g[m]; });
+    return ordered;
+  }, [filtered]);
+
+  const total = filtered.length;
+  const done = filtered.filter(i => i.purchased).length;
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#faf9f7', paddingBottom: 80 }}>
+      <div style={{ padding: '24px 20px 0', maxWidth: 720, margin: '0 auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+          <button onClick={onBack} style={{ border: 'none', background: '#f5f3f0', borderRadius: 10, padding: '8px 14px', cursor: 'pointer', color: '#57534e', fontFamily: 'Inter', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+            ← Back
+          </button>
+          <div style={{ flex: 1 }}>
+            <h2 className="serif" style={{ fontSize: 28 }}>Timeline</h2>
+            <div style={{ fontSize: 12, color: '#a8a29e', marginTop: 2 }}>
+              {done} of {total} purchased
+            </div>
+          </div>
+          <button onClick={() => setFilterOpen(!filterOpen)}
+            style={{ border: '1px solid #ebe7e0', background: filterOpen ? '#e8ebe7' : 'white', borderRadius: 10, padding: '8px 14px', cursor: 'pointer', color: '#57534e', fontFamily: 'Inter', fontSize: 13 }}>
+            Filter
+          </button>
+        </div>
+
+        {filterOpen && (
+          <div style={{ background: 'white', border: '1px solid #ebe7e0', borderRadius: 16, padding: 16, marginBottom: 16, display: 'grid', gap: 12 }}>
+            <input className="input-field" value={searchVal} onChange={e => handleSearch(e.target.value)} placeholder="Search items..." />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+              <select className="input-field" value={filter.category} onChange={e => setFilter(f => ({ ...f, category: e.target.value }))} style={{ padding: '8px 10px', fontSize: 13 }}>
+                <option value="all">All Categories</option>
+                {Object.entries(CATEGORY_INFO).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+              </select>
+              <select className="input-field" value={filter.mandatory} onChange={e => setFilter(f => ({ ...f, mandatory: e.target.value }))} style={{ padding: '8px 10px', fontSize: 13 }}>
+                <option value="all">All Items</option>
+                <option value="essential">Essential</option>
+                <option value="optional">Optional</option>
+              </select>
+              <select className="input-field" value={filter.purchased} onChange={e => setFilter(f => ({ ...f, purchased: e.target.value }))} style={{ padding: '8px 10px', fontSize: 13 }}>
+                <option value="no">To Buy</option>
+                <option value="yes">Purchased</option>
+                <option value="all">All Status</option>
+              </select>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div style={{ padding: '0 20px', maxWidth: 720, margin: '0 auto', display: 'grid', gap: 16 }}>
+        {Object.keys(grouped).length === 0 && (
+          <div style={{ textAlign: 'center', padding: '60px 20px', color: '#a8a29e', fontSize: 14 }}>
+            No items found
+          </div>
+        )}
+
+        {Object.entries(grouped).map(([month, monthItems]) => (
+          <div key={month} style={{ background: 'white', border: '1px solid #ebe7e0', borderRadius: 18, overflow: 'hidden' }}>
+            <div style={{ padding: '14px 16px', borderBottom: '1px solid #f5f3f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="serif" style={{ fontSize: 18, color: '#44403c' }}>{month}</div>
+              <div style={{ fontSize: 12, color: '#a8a29e' }}>{monthItems.filter(i => i.purchased).length} / {monthItems.length}</div>
+            </div>
+            <div style={{ display: 'grid' }}>
+              {monthItems.map((item, idx) => (
+                <div key={item.id} style={{ borderBottom: idx < monthItems.length - 1 ? '1px solid #f5f3f0' : 'none', padding: '0 16px' }}>
+                  <ItemCard
+                    item={item}
+                    settings={settings}
+                    variant="line"
+                    showCategoryTag
+                    onToggle={onToggle}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    onAddComment={onAddComment}
+                    onChangeMonth={onChangeMonth}
+                    onTogglePin={onTogglePin}
+                    celebrating={celebratingId === item.id}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 // Purchased Items Modal
 const PurchasedModal = ({ items, onClose, onToggle }) => {
@@ -942,7 +1145,7 @@ const PurchasedModal = ({ items, onClose, onToggle }) => {
 };
 
 // Home Dashboard
-const HomeDashboard = ({ items, settings, updatesRaw, userName, onSetUserName, onMarkUpdatesSeen, hasNewUpdates, hideActivityPanel, onHideActivityPanel, onOpenPurchased, onCategoryClick, onToggle, onEdit, onDelete, onAddComment, celebratingId, onOpenSettings, onAdd }) => {
+const HomeDashboard = ({ items, settings, updatesRaw, userName, onSetUserName, onMarkUpdatesSeen, hasNewUpdates, hideActivityPanel, onHideActivityPanel, onOpenPurchased, onCategoryClick, onToggle, onEdit, onDelete, onAddComment, onChangeMonth, onTogglePin, celebratingId, onOpenSettings, onOpenTimeline, onAdd }) => {
   const weeks = weeksUntil(settings.dueDate);
   const total = items.length;
   const done = items.filter(i => i.purchased).length;
@@ -1098,7 +1301,7 @@ const describeUpdate = (u) => {
 
         {/* Due date & progress */}
         <div className="fade-in fade-in-delay-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 28, marginBottom: 28 }}>
-          <div onClick={onOpenSettings} style={{ background: 'white', border: '1px solid #ebe7e0', borderRadius: 20, padding: '20px', cursor: 'pointer' }}>
+          <div onClick={onOpenTimeline} style={{ background: 'white', border: '1px solid #ebe7e0', borderRadius: 20, padding: '20px', cursor: 'pointer' }}>
             <Label>Due Date</Label>
             <div className="serif" style={{ fontSize: 22, marginTop: 4 }}>{formatDate(settings.dueDate)}</div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 8 }}>
@@ -1176,23 +1379,22 @@ const describeUpdate = (u) => {
             )}
             {focusItems.map((item, idx) => (
               <div key={item.id} style={{
-                display: 'flex', alignItems: 'center', gap: 14, padding: '14px 20px',
                 borderBottom: idx < focusItems.length - 1 ? '1px solid #f5f3f0' : 'none',
-                position: 'relative'
+                padding: '0 20px'
               }}>
-                <CheckBox checked={item.purchased} onChange={() => onToggle(item.id)} celebrating={celebratingId === item.id} />
-                <div style={{ flex: 1 }}>
-                  <div className="serif" style={{ fontSize: 18, textDecoration: item.purchased ? 'line-through' : 'none' }}>{item.item}</div>
-                  <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
-                    <span style={{ fontSize: 11, color: '#a8a29e' }}>{item.targetMonth}</span>
-                    <span style={{ fontSize: 11, color: '#a8a29e' }}>·</span>
-                    <span style={{ fontSize: 11, color: '#a8a29e' }}>{(CATEGORY_INFO[item.category] && CATEGORY_INFO[item.category].label)}</span>
-                  </div>
-                </div>
-                <PriorityTag priority={item.priority} />
-                {item.estimatedCost > 0 && (
-                  <span style={{ fontSize: 13, color: '#8a9688', fontWeight: 500, whiteSpace: 'nowrap' }}>{fmt(item.estimatedCost)}</span>
-                )}
+                <ItemCard
+                  item={item}
+                  settings={settings}
+                  variant="line"
+                  showCategoryTag
+                  onToggle={onToggle}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  onAddComment={onAddComment}
+                  onChangeMonth={onChangeMonth}
+                  onTogglePin={onTogglePin}
+                  celebrating={celebratingId === item.id}
+                />
               </div>
             ))}
           </div>
@@ -1253,7 +1455,7 @@ const App = () => {
   const [items, setItems] = useState([]);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
-  const [screen, setScreen] = useState('home'); // 'home' | 'category'
+  const [screen, setScreen] = useState('home'); // 'home' | 'category' | 'timeline'
   const [activeCategory, setActiveCategory] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -1368,7 +1570,20 @@ unsubUpdates = db.collection('updates').orderBy('at', 'desc').limit(50).onSnapsh
     await logUpdate({ type: UPDATE_EVENT_TYPES.COMMENT_ADDED, itemId: id, itemName: item.item, category: item.category });
   }, [items]);
 
-  const saveSettings = useCallback(async (newSettings) => {
+  
+  const changeMonth = useCallback(async (id, targetMonth) => {
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+    await db.collection('items').doc(String(id)).update({ targetMonth });
+  }, [items]);
+
+  const togglePin = useCallback(async (id) => {
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+    await db.collection('items').doc(String(id)).update({ pinnedFocus: !item.pinnedFocus });
+  }, [items]);
+
+const saveSettings = useCallback(async (newSettings) => {
     await db.collection('settings').doc('general').set(newSettings);
     setSettings(newSettings);
   }, []);
@@ -1454,11 +1669,15 @@ const saveUserName = useCallback((name) => {
           hideActivityPanel={hideActivityPanel}
           onHideActivityPanel={setHideActivityPanel}
           onOpenPurchased={() => setShowPurchasedModal(true)}
+          onOpenTimeline={() => setScreen('timeline')}
+
           onCategoryClick={cat => { setActiveCategory(cat); setScreen('category'); }}
           onToggle={toggleItem}
           onEdit={handleEdit}
           onDelete={deleteItem}
           onAddComment={addComment}
+          onChangeMonth={changeMonth}
+          onTogglePin={togglePin}
           celebratingId={celebratingId}
           onOpenSettings={() => setShowSettings(true)}
           onAdd={handleAdd}
@@ -1479,6 +1698,22 @@ const saveUserName = useCallback((name) => {
         />
       )}
 
+      {screen === 'timeline' && (
+        <TimelineView
+          items={items}
+          settings={settings}
+          onBack={() => setScreen('home')}
+          onToggle={toggleItem}
+          onEdit={handleEdit}
+          onDelete={deleteItem}
+          onAddComment={addComment}
+          onChangeMonth={changeMonth}
+          onTogglePin={togglePin}
+          celebratingId={celebratingId}
+        />
+      )}
+
+
       {/* Item Form Modal */}
       {showAddForm && (
         <ItemFormModal
@@ -1495,7 +1730,6 @@ const saveUserName = useCallback((name) => {
   <NameModal
     initialName={userName}
     onSave={saveUserName}
-    onClose={() => setShowNameModal(false)}
     onClose={dismissNameModal}
   />
 )}
