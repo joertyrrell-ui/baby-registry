@@ -163,12 +163,26 @@ input:focus, select:focus, textarea:focus { ring: none; }
 }
 
 
-  /* Row action buttons: hidden until hover (but always visible on touch devices) */
-  .hover-actions { opacity: 0; pointer-events: none; }
-  .item-card:hover .hover-actions { opacity: 1; pointer-events: auto; }
-  @media (hover: none) {
-    .hover-actions { opacity: 1; pointer-events: auto; }
-  }
+  /* Row action buttons: hidden until hover (desktop). On mobile, tap the row to focus and reveal actions. */
+.hover-actions { opacity: 0; pointer-events: none; }
+.item-card:hover .hover-actions { opacity: 1; pointer-events: auto; }
+.item-card:focus .hover-actions { opacity: 1; pointer-events: auto; }
+.item-card:focus { outline: none; }
+
+/* Mobile tidy up */
+@media (max-width: 520px) {
+  .item-card { padding: 14px 12px !important; }
+  .tag { font-size: 12px !important; padding: 6px 10px !important; border-radius: 999px; }
+  .tag.category { display: none !important; }
+  .serif { letter-spacing: -0.01em; }
+  .item-title { font-size: 26px !important; line-height: 1.05 !important; }
+  .meta-line { font-size: 14px !important; }
+  .hover-actions button { width: 40px !important; height: 40px !important; border-radius: 14px !important; }
+  .item-card .hover-actions { opacity: 0; pointer-events: none; }
+  .item-card:focus .hover-actions { opacity: 1; pointer-events: auto; }
+}
+
+}
 
 </style>
 </head>
@@ -513,10 +527,7 @@ const handleSave = () => {
               <input type="checkbox" checked={form.mandatory} onChange={e => set('mandatory', e.target.checked)} />
               Essential
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14 }}>
-              <input type="checkbox" checked={!!form.pinnedFocus} onChange={e => set('pinnedFocus', e.target.checked)} />
-              Pin to Focus
-            </label>
+            <button type="button" className={`pin-toggle ${form.pinnedFocus ? 'on' : ''}`} onClick={() => set('pinnedFocus', !form.pinnedFocus)} title="Pin to Focus" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, border: '1px solid #ebe7e0', background: form.pinnedFocus ? '#eef2ff' : 'white', borderRadius: 14, padding: '10px 12px', cursor: 'pointer', fontFamily: 'Inter', fontSize: 14 }}><span style={{ fontSize: 16 }}>📌</span><span>{form.pinnedFocus ? 'Pinned to Focus' : 'Pin to Focus'}</span></button>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14 }}>
               <input type="checkbox" checked={form.purchased} onChange={e => set('purchased', e.target.checked)} />
               Purchased
@@ -730,6 +741,7 @@ const ItemCard = ({ item, settings, onToggle, onEdit, onDelete, onAddComment, on
   return (
     <div
       className="transition-smooth item-card"
+      tabIndex={0}
       style={{
         background: variant === 'line' ? 'transparent' : 'white',
         border: variant === 'line' ? 'none' : '1px solid #ebe7e0',
@@ -767,7 +779,7 @@ const ItemCard = ({ item, settings, onToggle, onEdit, onDelete, onAddComment, on
                 {item.pinnedFocus && <span className="tag pinned" title="Pinned to Focus">📌</span>}
                 {item.mandatory && <span className="tag essential">Essential</span>}
                 {showCategoryTag && (
-                  <span className="tag">{((CATEGORY_INFO[item.category] && CATEGORY_INFO[item.category].emoji) || '')} {((CATEGORY_INFO[item.category] && CATEGORY_INFO[item.category].label) || item.category)}</span>
+                  <span className="tag category">{((CATEGORY_INFO[item.category] && CATEGORY_INFO[item.category].emoji) || '')} {((CATEGORY_INFO[item.category] && CATEGORY_INFO[item.category].label) || item.category)}</span>
                 )}
                 <PriorityTag priority={item.priority} />
                 {item.assignedTo && <span className="tag">{item.assignedTo}</span>}
@@ -1615,7 +1627,9 @@ unsubUpdates = db.collection('updates').orderBy('at', 'desc').limit(50).onSnapsh
     const nextPurchased = !wasPurchased;
     // If marking as purchased and no actualCost set, default actualCost to productPrice (if available)
     const nextActualCost = nextPurchased ? (item.actualCost ?? item.productPrice ?? null) : item.actualCost ?? null;
-    const payload = nextPurchased ? { purchased: true, actualCost: nextActualCost } : { purchased: false };
+    const payload = nextPurchased
+      ? { purchased: true, actualCost: nextActualCost }
+      : { purchased: false, actualCost: null };
     await db.collection('items').doc(String(id)).update(payload);
 await logUpdate({ type: UPDATE_EVENT_TYPES.PURCHASED_TOGGLED, itemId: id, itemName: item.item, category: item.category });
     if (!wasPurchased) {
