@@ -1627,9 +1627,7 @@ unsubUpdates = db.collection('updates').orderBy('at', 'desc').limit(50).onSnapsh
     const nextPurchased = !wasPurchased;
     // If marking as purchased and no actualCost set, default actualCost to productPrice (if available)
     const nextActualCost = nextPurchased ? (item.actualCost ?? item.productPrice ?? null) : item.actualCost ?? null;
-    const payload = nextPurchased
-      ? { purchased: true, actualCost: nextActualCost }
-      : { purchased: false, actualCost: null };
+    const payload = nextPurchased ? { purchased: true, actualCost: nextActualCost } : { purchased: false };
     await db.collection('items').doc(String(id)).update(payload);
 await logUpdate({ type: UPDATE_EVENT_TYPES.PURCHASED_TOGGLED, itemId: id, itemName: item.item, category: item.category });
     if (!wasPurchased) {
