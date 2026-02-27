@@ -458,9 +458,21 @@ const ItemFormModal = ({ item, onSave, onClose, categories }) => {
     brand: '', link: '', imageUrl: '', notes: ''
   });
 
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const set = (k, v) => setForm(f => {
+    // Keep pricing logic consistent: when marking as purchased, default Actual Cost to Product Price if not set
+    if (k === 'purchased') {
+      const nextPurchased = !!v;
+      if (nextPurchased && (f.actualCost === null || f.actualCost === '' || typeof f.actualCost === 'undefined')) {
+        if (f.productPrice !== null && f.productPrice !== '' && typeof f.productPrice !== 'undefined') {
+          return { ...f, purchased: true, actualCost: f.productPrice };
+        }
+      }
+      return { ...f, purchased: nextPurchased };
+    }
+    return { ...f, [k]: v };
+  });
 
-  const handleSave = () => {
+const handleSave = () => {
     if (!form.item.trim()) return;
     onSave({
       ...form,
@@ -501,26 +513,10 @@ const ItemFormModal = ({ item, onSave, onClose, categories }) => {
               <input type="checkbox" checked={form.mandatory} onChange={e => set('mandatory', e.target.checked)} />
               Essential
             </label>
-            <button
-              type="button"
-              onClick={() => set('pinnedFocus', !form.pinnedFocus)}
-              title={form.pinnedFocus ? "Unpin from Focus" : "Pin to Focus"}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                cursor: 'pointer',
-                fontSize: 14,
-                border: 'none',
-                background: form.pinnedFocus ? '#e8ebe7' : 'transparent',
-                padding: '6px 10px',
-                borderRadius: 10,
-                color: '#57534e'
-              }}
-            >
-              <span style={{ fontSize: 14 }}>📌</span>
-              <span>{form.pinnedFocus ? 'Pinned to Focus' : 'Pin to Focus'}</span>
-            </button>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14 }}>
+              <input type="checkbox" checked={!!form.pinnedFocus} onChange={e => set('pinnedFocus', e.target.checked)} />
+              Pin to Focus
+            </label>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14 }}>
               <input type="checkbox" checked={form.purchased} onChange={e => set('purchased', e.target.checked)} />
               Purchased
@@ -1165,8 +1161,12 @@ const HomeDashboard = ({ items, settings, updatesRaw, userName, onSetUserName, o
   // Budget stats
   const estimated = items.reduce((s, i) => s + (i.estimatedCost || 0), 0);
   const identified = items.reduce((s, i) => s + (i.productPrice || 0), 0);
-  const spent = items.reduce((s, i) => s + (i.actualCost || 0), 0);
-  const saving = estimated - spent;
+  const spent = items.reduce((s, i) => {
+    const val = (i.purchased ? (i.actualCost ?? i.productPrice ?? 0) : 0);
+    const n = typeof val === 'string' ? parseFloat(val) : val;
+    return s + (Number.isFinite(n) ? n : 0);
+  }, 0);
+const saving = estimated - spent;
 
 
 // Recent activity (signal layer): last 7 days, max 5 unique items
@@ -1586,8 +1586,12 @@ unsubUpdates = db.collection('updates').orderBy('at', 'desc').limit(50).onSnapsh
     const item = items.find(i => i.id === id);
     if (!item) return;
     const wasPurchased = item.purchased;
-    await db.collection('items').doc(String(id)).update({ purchased: !wasPurchased });
-    await logUpdate({ type: UPDATE_EVENT_TYPES.PURCHASED_TOGGLED, itemId: id, itemName: item.item, category: item.category });
+    const nextPurchased = !wasPurchased;
+    // If marking as purchased and no actualCost set, default actualCost to productPrice (if available)
+    const nextActualCost = nextPurchased ? (item.actualCost ?? item.productPrice ?? null) : item.actualCost ?? null;
+    const payload = nextPurchased ? { purchased: true, actualCost: nextActualCost } : { purchased: false };
+    await db.collection('items').doc(String(id)).update(payload);
+await logUpdate({ type: UPDATE_EVENT_TYPES.PURCHASED_TOGGLED, itemId: id, itemName: item.item, category: item.category });
     if (!wasPurchased) {
       setCelebratingId(id);
       setTimeout(() => setCelebratingId(null), 1000);
