@@ -457,11 +457,11 @@ const ItemFormModal = ({ item, onSave, onClose, categories }) => {
   };
 
   return (
-    <div className="modal-overlay" onClick={onDismiss}>
+    <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <h2 className="serif" style={{ fontSize: 24 }}>{item ? 'Edit Item' : 'Add Item'}</h2>
-          <button onClick={onDismiss} style={{ color: '#a8a29e', background: 'none', border: 'none', cursor: 'pointer', fontSize: 20 }}>✕</button>
+          <button onClick={onClose} style={{ color: '#a8a29e', background: 'none', border: 'none', cursor: 'pointer', fontSize: 20 }}>✕</button>
         </div>
 
         <div style={{ display: 'grid', gap: 16 }}>
@@ -511,7 +511,7 @@ const ItemFormModal = ({ item, onSave, onClose, categories }) => {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 8 }}>
-            <button onClick={onDismiss} style={{ padding: '12px', border: '1px solid #ebe7e0', borderRadius: 12, background: 'transparent', cursor: 'pointer', color: '#57534e', fontFamily: 'Inter', fontSize: 14 }}>
+            <button onClick={onClose} style={{ padding: '12px', border: '1px solid #ebe7e0', borderRadius: 12, background: 'transparent', cursor: 'pointer', color: '#57534e', fontFamily: 'Inter', fontSize: 14 }}>
               Cancel
             </button>
             <button onClick={handleSave} style={{ padding: '12px', border: 'none', borderRadius: 12, background: '#6b7869', color: 'white', cursor: 'pointer', fontFamily: 'Inter', fontSize: 14, fontWeight: 500 }}>
@@ -536,11 +536,11 @@ const SettingsModal = ({ settings, onSave, onClose }) => {
   }));
 
   return (
-    <div className="modal-overlay" onClick={onDismiss}>
+    <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <h2 className="serif" style={{ fontSize: 24 }}>Settings</h2>
-          <button onClick={onDismiss} style={{ color: '#a8a29e', background: 'none', border: 'none', cursor: 'pointer', fontSize: 20 }}>✕</button>
+          <button onClick={onClose} style={{ color: '#a8a29e', background: 'none', border: 'none', cursor: 'pointer', fontSize: 20 }}>✕</button>
         </div>
 
         <div style={{ display: 'grid', gap: 20 }}>
@@ -562,7 +562,7 @@ const SettingsModal = ({ settings, onSave, onClose }) => {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <button onClick={onDismiss} style={{ padding: '12px', border: '1px solid #ebe7e0', borderRadius: 12, background: 'transparent', cursor: 'pointer', color: '#57534e', fontFamily: 'Inter', fontSize: 14 }}>
+            <button onClick={onClose} style={{ padding: '12px', border: '1px solid #ebe7e0', borderRadius: 12, background: 'transparent', cursor: 'pointer', color: '#57534e', fontFamily: 'Inter', fontSize: 14 }}>
               Cancel
             </button>
             <button onClick={() => { onSave(form); onClose(); }} style={{ padding: '12px', border: 'none', borderRadius: 12, background: '#6b7869', color: 'white', cursor: 'pointer', fontFamily: 'Inter', fontSize: 14, fontWeight: 500 }}>
@@ -578,15 +578,15 @@ const SettingsModal = ({ settings, onSave, onClose }) => {
 
 
 // Name Modal (stores locally per device)
-const NameModal = ({ initialName, onSave, onClose, onDismiss }) => {
+const NameModal = ({ initialName, onSave, onClose, onClose }) => {
   const [name, setName] = useState(initialName || '');
 
   return (
-    <div className="modal-overlay" onClick={onDismiss}>
+    <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <h2 className="serif" style={{ fontSize: 24 }}>Who is using this?</h2>
-          <button onClick={onDismiss} style={{ color: '#a8a29e', background: 'none', border: 'none', cursor: 'pointer', fontSize: 20 }}>✕</button>
+          <button onClick={onClose} style={{ color: '#a8a29e', background: 'none', border: 'none', cursor: 'pointer', fontSize: 20 }}>✕</button>
         </div>
 
         <div style={{ display: 'grid', gap: 16 }}>
@@ -601,7 +601,7 @@ const NameModal = ({ initialName, onSave, onClose, onDismiss }) => {
           </select>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 8 }}>
-            <button onClick={onDismiss} style={{ padding: '12px', border: '1px solid #ebe7e0', borderRadius: 12, background: 'transparent', cursor: 'pointer', color: '#57534e', fontFamily: 'Inter', fontSize: 14 }}>
+            <button onClick={onClose} style={{ padding: '12px', border: '1px solid #ebe7e0', borderRadius: 12, background: 'transparent', cursor: 'pointer', color: '#57534e', fontFamily: 'Inter', fontSize: 14 }}>
               Not now
             </button>
             <button onClick={() => { onSave(name); onClose(); }} disabled={!name}
@@ -1449,7 +1449,7 @@ const saveUserName = useCallback((name) => {
     initialName={userName}
     onSave={saveUserName}
     onClose={() => setShowNameModal(false)}
-    onDismiss={dismissNameModal}
+    onClose={dismissNameModal}
   />
 )}
 
