@@ -1182,12 +1182,20 @@ const PurchasedModal = ({ items, onClose, onToggle }) => {
                 </div>
               </div>
             ))}
+
+            {/* Footer total */}
+            <div style={{
+              borderTop: '1px solid #ebe7e0',
+              paddingTop: 14,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <div style={{ fontSize: 12, color: '#a8a29e' }}>Total</div>
+              <div className="serif" style={{ fontSize: 20, color: '#44403c' }}>{fmt(spentTotal)}</div>
+            </div>
           </div>
 
-            <div style={{ borderTop: '1px solid #ebe7e0', paddingTop: 12, marginTop: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontSize: 12, color: '#a8a29e' }}>{purchased.length} items</div>
-              <div style={{ fontSize: 14, color: '#57534e', fontWeight: 600 }}>Total: {fmt(spentTotal)}</div>
-            </div>
         )}
       </div>
     </div>
