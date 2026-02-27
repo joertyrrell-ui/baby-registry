@@ -172,6 +172,13 @@ input:focus, select:focus, textarea:focus { ring: none; }
 /* Mobile tidy up */
 @media (max-width: 520px) {
   .item-card { padding: 14px 12px !important; }
+  .item-card .item-title { font-size: 22px !important; line-height: 1.1 !important; }
+  .item-card .tags-row { gap: 6px !important; margin-bottom: 8px !important; }
+  .item-card .tag { font-size: 11px !important; padding: 6px 10px !important; }
+  .item-card .check-box { width: 22px !important; height: 22px !important; border-radius: 7px !important; }
+  .item-card img { width: 44px !important; height: 44px !important; border-radius: 10px !important; }
+  .item-card .price-row { flex-wrap: wrap !important; gap: 10px !important; }
+  .item-card a { font-size: 12px !important; }
   .tag { font-size: 12px !important; padding: 6px 10px !important; border-radius: 999px; }
   .tag.category { display: none !important; }
   .serif { letter-spacing: -0.01em; }
@@ -180,8 +187,6 @@ input:focus, select:focus, textarea:focus { ring: none; }
   .hover-actions button { width: 40px !important; height: 40px !important; border-radius: 14px !important; }
   .item-card .hover-actions { opacity: 0; pointer-events: none; }
   .item-card:focus .hover-actions { opacity: 1; pointer-events: auto; }
-}
-
 }
 
 </style>
@@ -765,7 +770,7 @@ const ItemCard = ({ item, settings, onToggle, onEdit, onDelete, onAddComment, on
                 onError={e => e.target.style.display = 'none'} />
             )}
             <div style={{ flex: 1 }}>
-              <div className="serif" style={{
+              <div className="serif item-title" style={{
                 fontSize: 20,
                 textDecoration: item.purchased ? 'line-through' : 'none',
                 color: '#44403c',
@@ -774,7 +779,7 @@ const ItemCard = ({ item, settings, onToggle, onEdit, onDelete, onAddComment, on
               }}>
                 {item.item}
               </div>
-              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 6 }}>
+              <div className="tags-row" style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 6 }}>
                 <MonthTagSelect value={item.targetMonth} settings={settings} onChange={(m) => onChangeMonth && onChangeMonth(item.id, m)} />
                 {item.pinnedFocus && <span className="tag pinned" title="Pinned to Focus">📌</span>}
                 {item.mandatory && <span className="tag essential">Essential</span>}
@@ -786,7 +791,7 @@ const ItemCard = ({ item, settings, onToggle, onEdit, onDelete, onAddComment, on
               </div>
 
               {(item.estimatedCost || item.productPrice || item.actualCost) && (
-                <div style={{ display: 'flex', gap: 12, marginBottom: 6 }}>
+                <div className="price-row" style={{ display: 'flex', gap: 12, marginBottom: 6 }}>
                   {item.estimatedCost > 0 && <span style={{ fontSize: 12, color: '#a8a29e' }}>Budget: {fmt(item.estimatedCost)}</span>}
                   {item.productPrice && <span style={{ fontSize: 12, color: '#6b7869' }}>Price: {fmt(item.productPrice)}</span>}
                   {item.actualCost && <span style={{ fontSize: 12, color: '#556058', fontWeight: 500 }}>Paid: {fmt(item.actualCost)}</span>}
