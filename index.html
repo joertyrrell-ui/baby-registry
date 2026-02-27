@@ -212,14 +212,19 @@ input:focus, select:focus, textarea:focus { ring: none; }
 
 }
 
+/* Mobile actions - default hidden, shown on mobile */
+.mobile-actions{position:absolute;top:14px;right:14px;z-index:4;display:none}
+.mobile-actions-btn{width:44px;height:44px;border-radius:14px;border:1px solid var(--stroke);background:rgba(255,255,255,.9);box-shadow:0 10px 25px rgba(20,20,20,.06);font-size:28px;line-height:0;display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer}
+.mobile-actions-btn:active{transform:translateY(1px)}
+.mobile-actions-menu{position:absolute;top:48px;right:0;min-width:170px;padding:8px;border-radius:14px;background:rgba(255,255,255,.96);border:1px solid var(--stroke);box-shadow:0 18px 45px rgba(20,20,20,.12);backdrop-filter:blur(10px);z-index:10}
+.mobile-actions-menu button{width:100%;text-align:left;padding:10px 12px;border-radius:12px;border:none;background:transparent;font:inherit;color:var(--text);cursor:pointer}
+.mobile-actions-menu button:hover{background:rgba(0,0,0,.04)}
+.mobile-actions-menu button.danger{color:#9b2c2c}
 
-  .mobile-actions{position:absolute;top:14px;right:14px;z-index:4;display:none}
-  .mobile-actions-btn{width:44px;height:44px;border-radius:14px;border:1px solid var(--stroke);background:rgba(255,255,255,.9);box-shadow:0 10px 25px rgba(20,20,20,.06);font-size:28px;line-height:0;display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer}
-  .mobile-actions-btn:active{transform:translateY(1px)}
-  .mobile-actions-menu{position:absolute;top:48px;right:0;min-width:170px;padding:8px;border-radius:14px;background:rgba(255,255,255,.96);border:1px solid var(--stroke);box-shadow:0 18px 45px rgba(20,20,20,.12);backdrop-filter:blur(10px)}
-  .mobile-actions-menu button{width:100%;text-align:left;padding:10px 12px;border-radius:12px;border:none;background:transparent;font:inherit;color:var(--text);cursor:pointer}
-  .mobile-actions-menu button:hover{background:rgba(0,0,0,.04)}
-  .mobile-actions-menu button.danger{color:#9b2c2c}
+/* Ensure mobile actions show on small screens */
+@media (max-width: 520px) {
+  .mobile-actions{display:block !important}
+}
 
 </style>
 </head>
