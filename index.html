@@ -123,7 +123,6 @@ input:focus, select:focus, textarea:focus { ring: none; }
   background: #ebe7e0; color: #78716c;
 }
 .tag.essential { background: #e8ebe7; color: #556058; }
-.tag.pinned { background: #eae6ff; color: #4c1d95; }
 .tag.urgent { background: #fef2f2; color: #991b1b; }
 .tag.this-week { background: #fefce8; color: #854d0e; }
 .tag.soon { background: #f0fdf4; color: #166534; }
@@ -156,34 +155,6 @@ input:focus, select:focus, textarea:focus { ring: none; }
 .fade-in-delay-2 { animation-delay: 0.1s; }
 .fade-in-delay-3 { animation-delay: 0.15s; }
 .fade-in-delay-4 { animation-delay: 0.2s; }
-
-/* Show action buttons on touch devices (no hover) */
-@media (hover: none) and (pointer: coarse) {
-  
-}
-
-
-  /* Row action buttons: hidden until hover (desktop). On mobile, tap the row to focus and reveal actions. */
-.hover-actions { opacity: 0; pointer-events: none; }
-.item-card:hover .hover-actions { opacity: 1; pointer-events: auto; }
-.item-card:focus .hover-actions { opacity: 1; pointer-events: auto; }
-.item-card:focus { outline: none; }
-
-/* Mobile tidy up */
-@media (max-width: 520px) {
-  .item-card { padding: 14px 12px !important; }
-  .tag { font-size: 12px !important; padding: 6px 10px !important; border-radius: 999px; }
-  .tag.category { display: none !important; }
-  .serif { letter-spacing: -0.01em; }
-  .item-title { font-size: 26px !important; line-height: 1.05 !important; }
-  .meta-line { font-size: 14px !important; }
-  .hover-actions button { width: 40px !important; height: 40px !important; border-radius: 14px !important; }
-  .item-card .hover-actions { opacity: 0; pointer-events: none; }
-  .item-card:focus .hover-actions { opacity: 1; pointer-events: auto; }
-}
-
-}
-
 </style>
 </head>
 <body>
@@ -467,26 +438,14 @@ const ProgressBar = ({ pct, style }) => (
 const ItemFormModal = ({ item, onSave, onClose, categories }) => {
   const [form, setForm] = useState(item || {
     item: '', category: 'TRAVEL', targetMonth: 'March', priority: 'normal',
-    assignedTo: null, mandatory: false, pinnedFocus: false, purchased: false,
+    assignedTo: null, mandatory: false, purchased: false,
     estimatedCost: '', productPrice: '', actualCost: '',
     brand: '', link: '', imageUrl: '', notes: ''
   });
 
-  const set = (k, v) => setForm(f => {
-    // Keep pricing logic consistent: when marking as purchased, default Actual Cost to Product Price if not set
-    if (k === 'purchased') {
-      const nextPurchased = !!v;
-      if (nextPurchased && (f.actualCost === null || f.actualCost === '' || typeof f.actualCost === 'undefined')) {
-        if (f.productPrice !== null && f.productPrice !== '' && typeof f.productPrice !== 'undefined') {
-          return { ...f, purchased: true, actualCost: f.productPrice };
-        }
-      }
-      return { ...f, purchased: nextPurchased };
-    }
-    return { ...f, [k]: v };
-  });
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
-const handleSave = () => {
+  const handleSave = () => {
     if (!form.item.trim()) return;
     onSave({
       ...form,
@@ -498,11 +457,11 @@ const handleSave = () => {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={onDismiss}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <h2 className="serif" style={{ fontSize: 24 }}>{item ? 'Edit Item' : 'Add Item'}</h2>
-          <button onClick={onClose} style={{ color: '#a8a29e', background: 'none', border: 'none', cursor: 'pointer', fontSize: 20 }}>✕</button>
+          <button onClick={onDismiss} style={{ color: '#a8a29e', background: 'none', border: 'none', cursor: 'pointer', fontSize: 20 }}>✕</button>
         </div>
 
         <div style={{ display: 'grid', gap: 16 }}>
@@ -527,7 +486,6 @@ const handleSave = () => {
               <input type="checkbox" checked={form.mandatory} onChange={e => set('mandatory', e.target.checked)} />
               Essential
             </label>
-            <button type="button" className={`pin-toggle ${form.pinnedFocus ? 'on' : ''}`} onClick={() => set('pinnedFocus', !form.pinnedFocus)} title="Pin to Focus" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, border: '1px solid #ebe7e0', background: form.pinnedFocus ? '#eef2ff' : 'white', borderRadius: 14, padding: '10px 12px', cursor: 'pointer', fontFamily: 'Inter', fontSize: 14 }}><span style={{ fontSize: 16 }}>📌</span><span>{form.pinnedFocus ? 'Pinned to Focus' : 'Pin to Focus'}</span></button>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14 }}>
               <input type="checkbox" checked={form.purchased} onChange={e => set('purchased', e.target.checked)} />
               Purchased
@@ -553,7 +511,7 @@ const handleSave = () => {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 8 }}>
-            <button onClick={onClose} style={{ padding: '12px', border: '1px solid #ebe7e0', borderRadius: 12, background: 'transparent', cursor: 'pointer', color: '#57534e', fontFamily: 'Inter', fontSize: 14 }}>
+            <button onClick={onDismiss} style={{ padding: '12px', border: '1px solid #ebe7e0', borderRadius: 12, background: 'transparent', cursor: 'pointer', color: '#57534e', fontFamily: 'Inter', fontSize: 14 }}>
               Cancel
             </button>
             <button onClick={handleSave} style={{ padding: '12px', border: 'none', borderRadius: 12, background: '#6b7869', color: 'white', cursor: 'pointer', fontFamily: 'Inter', fontSize: 14, fontWeight: 500 }}>
@@ -578,11 +536,11 @@ const SettingsModal = ({ settings, onSave, onClose }) => {
   }));
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={onDismiss}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <h2 className="serif" style={{ fontSize: 24 }}>Settings</h2>
-          <button onClick={onClose} style={{ color: '#a8a29e', background: 'none', border: 'none', cursor: 'pointer', fontSize: 20 }}>✕</button>
+          <button onClick={onDismiss} style={{ color: '#a8a29e', background: 'none', border: 'none', cursor: 'pointer', fontSize: 20 }}>✕</button>
         </div>
 
         <div style={{ display: 'grid', gap: 20 }}>
@@ -604,7 +562,7 @@ const SettingsModal = ({ settings, onSave, onClose }) => {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <button onClick={onClose} style={{ padding: '12px', border: '1px solid #ebe7e0', borderRadius: 12, background: 'transparent', cursor: 'pointer', color: '#57534e', fontFamily: 'Inter', fontSize: 14 }}>
+            <button onClick={onDismiss} style={{ padding: '12px', border: '1px solid #ebe7e0', borderRadius: 12, background: 'transparent', cursor: 'pointer', color: '#57534e', fontFamily: 'Inter', fontSize: 14 }}>
               Cancel
             </button>
             <button onClick={() => { onSave(form); onClose(); }} style={{ padding: '12px', border: 'none', borderRadius: 12, background: '#6b7869', color: 'white', cursor: 'pointer', fontFamily: 'Inter', fontSize: 14, fontWeight: 500 }}>
@@ -620,15 +578,15 @@ const SettingsModal = ({ settings, onSave, onClose }) => {
 
 
 // Name Modal (stores locally per device)
-const NameModal = ({ initialName, onSave, onClose }) => {
+const NameModal = ({ initialName, onSave, onClose, onDismiss }) => {
   const [name, setName] = useState(initialName || '');
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={onDismiss}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <h2 className="serif" style={{ fontSize: 24 }}>Who is using this?</h2>
-          <button onClick={onClose} style={{ color: '#a8a29e', background: 'none', border: 'none', cursor: 'pointer', fontSize: 20 }}>✕</button>
+          <button onClick={onDismiss} style={{ color: '#a8a29e', background: 'none', border: 'none', cursor: 'pointer', fontSize: 20 }}>✕</button>
         </div>
 
         <div style={{ display: 'grid', gap: 16 }}>
@@ -643,7 +601,7 @@ const NameModal = ({ initialName, onSave, onClose }) => {
           </select>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 8 }}>
-            <button onClick={onClose} style={{ padding: '12px', border: '1px solid #ebe7e0', borderRadius: 12, background: 'transparent', cursor: 'pointer', color: '#57534e', fontFamily: 'Inter', fontSize: 14 }}>
+            <button onClick={onDismiss} style={{ padding: '12px', border: '1px solid #ebe7e0', borderRadius: 12, background: 'transparent', cursor: 'pointer', color: '#57534e', fontFamily: 'Inter', fontSize: 14 }}>
               Not now
             </button>
             <button onClick={() => { onSave(name); onClose(); }} disabled={!name}
@@ -657,68 +615,12 @@ const NameModal = ({ initialName, onSave, onClose }) => {
   );
 };
 
-
-// Month helpers
-const MONTH_NUM = { January:0, February:1, March:2, April:3, May:4, June:5, July:6, August:7, September:8, October:9, November:10, December:11 };
-
-const getAllowedMonths = (settings) => {
-  // Uses the dueDate year as the timeline year (so March-Aug are in the due year)
-  try {
-    const due = settings && settings.dueDate ? new Date(settings.dueDate) : new Date();
-    const year = due.getFullYear();
-    const now = new Date();
-
-    return MONTHS.filter(m => {
-      const mi = MONTH_NUM[m];
-      if (mi === undefined) return true;
-      // end of month
-      const end = new Date(year, mi + 1, 0, 23, 59, 59, 999);
-      return now.getTime() <= end.getTime();
-    });
-  } catch (e) {
-    return MONTHS;
-  }
-};
-
-const MonthTagSelect = ({ value, settings, onChange, disabled }) => {
-  const allowed = getAllowedMonths(settings);
-  // Ensure the current value is present so the select can render correctly
-  const options = allowed.includes(value) ? allowed : [value, ...allowed];
-
-  return (
-    <select
-      className="tag"
-      disabled={disabled}
-      value={value}
-      onChange={(e) => onChange && onChange(e.target.value)}
-      title="Change month"
-      style={{
-        border: 'none',
-        cursor: disabled ? 'default' : 'pointer',
-        appearance: 'none',
-        WebkitAppearance: 'none',
-        MozAppearance: 'none',
-        paddingRight: 18,
-        backgroundImage: disabled ? 'none' : 'linear-gradient(45deg, transparent 50%, #78716c 50%), linear-gradient(135deg, #78716c 50%, transparent 50%)',
-        backgroundPosition: disabled ? 'none' : 'calc(100% - 10px) 55%, calc(100% - 6px) 55%',
-        backgroundSize: disabled ? 'none' : '4px 4px, 4px 4px',
-        backgroundRepeat: 'no-repeat',
-      }}
-    >
-      {options.map(m => (
-        <option key={m} value={m} disabled={!allowed.includes(m) && m !== value}>
-          {m}
-        </option>
-      ))}
-    </select>
-  );
-};
-
 // Item Card (in category view)
-const ItemCard = ({ item, settings, onToggle, onEdit, onDelete, onAddComment, onChangeMonth, onTogglePin, showCategoryTag, variant = 'card', celebrating }) => {
+const ItemCard = ({ item, onToggle, onEdit, onDelete, onAddComment, celebrating }) => {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
-  const [commentAuthor, setCommentAuthor] = useState('Georgia'); 
+  const [commentAuthor, setCommentAuthor] = useState('Georgia');
+  const [hover, setHover] = useState(false);
 
   const latestComment = item.comments && item.comments.length > 0
     ? item.comments[item.comments.length - 1] : null;
@@ -740,13 +642,14 @@ const ItemCard = ({ item, settings, onToggle, onEdit, onDelete, onAddComment, on
 
   return (
     <div
-      className="transition-smooth item-card"
-      tabIndex={0}
+      className="transition-smooth"
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
       style={{
-        background: variant === 'line' ? 'transparent' : 'white',
-        border: variant === 'line' ? 'none' : '1px solid #ebe7e0',
-        borderRadius: variant === 'line' ? 0 : 16,
-        padding: variant === 'line' ? '14px 0' : '16px',
+        background: 'white',
+        border: '1px solid #ebe7e0',
+        borderRadius: 16,
+        padding: '16px',
         opacity: item.purchased ? 0.55 : 1,
         transition: 'all 0.3s',
         position: 'relative'
@@ -775,12 +678,8 @@ const ItemCard = ({ item, settings, onToggle, onEdit, onDelete, onAddComment, on
                 {item.item}
               </div>
               <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 6 }}>
-                <MonthTagSelect value={item.targetMonth} settings={settings} onChange={(m) => onChangeMonth && onChangeMonth(item.id, m)} />
-                {item.pinnedFocus && <span className="tag pinned" title="Pinned to Focus">📌</span>}
+                <span className="tag">{item.targetMonth}</span>
                 {item.mandatory && <span className="tag essential">Essential</span>}
-                {showCategoryTag && (
-                  <span className="tag category">{((CATEGORY_INFO[item.category] && CATEGORY_INFO[item.category].emoji) || '')} {((CATEGORY_INFO[item.category] && CATEGORY_INFO[item.category].label) || item.category)}</span>
-                )}
                 <PriorityTag priority={item.priority} />
                 {item.assignedTo && <span className="tag">{item.assignedTo}</span>}
               </div>
@@ -800,8 +699,8 @@ const ItemCard = ({ item, settings, onToggle, onEdit, onDelete, onAddComment, on
               {latestComment && !showComments && (
                 <div style={{ fontSize: 12, color: '#a8a29e', display: 'flex', alignItems: 'center', gap: 4 }}>
                   <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#8a9688' }} />
-                  <span style={{ fontWeight: 500, color: '#78716c' }}>{typeof latestComment === 'string' ? '' : (latestComment.author || '')}:</span>
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{typeof latestComment === 'string' ? latestComment : (latestComment.text || '')}</span>
+                  <span style={{ fontWeight: 500, color: '#78716c' }}>{latestComment.author}:</span>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{latestComment.text}</span>
                 </div>
               )}
 
@@ -816,10 +715,8 @@ const ItemCard = ({ item, settings, onToggle, onEdit, onDelete, onAddComment, on
         </div>
 
         {/* Action buttons */}
-        <div style={{ display: 'flex', gap: 4, transition: 'opacity 0.2s', flexShrink: 0 }}
-          className="hover-actions">
-          <button onClick={() => onTogglePin && onTogglePin(item.id)} title={item.pinnedFocus ? "Unpin from Focus" : "Pin to Focus"}
-            style={{ padding: '6px', border: 'none', background: item.pinnedFocus ? '#e8ebe7' : '#f5f3f0', borderRadius: 8, cursor: 'pointer', color: '#78716c', fontSize: 14 }}>📌</button>
+        <div style={{ display: 'flex', gap: 4, opacity: hover ? 1 : 0, transition: 'opacity 0.2s', flexShrink: 0 }}
+          className="md:flex">
           <button onClick={() => setShowComments(!showComments)}
             style={{ padding: '6px', border: 'none', background: '#f5f3f0', borderRadius: 8, cursor: 'pointer', color: '#78716c', fontSize: 14, position: 'relative' }}>
             💬{item.comments && item.comments.length > 0 && (
@@ -865,7 +762,7 @@ const ItemCard = ({ item, settings, onToggle, onEdit, onDelete, onAddComment, on
 };
 
 // Category View
-const CategoryView = ({ category, items, settings, onBack, onToggle, onEdit, onDelete, onAddComment, onChangeMonth, onTogglePin, onAdd, celebratingId }) => {
+const CategoryView = ({ category, items, onBack, onToggle, onEdit, onDelete, onAddComment, onAdd, celebratingId }) => {
   const [filterOpen, setFilterOpen] = useState(false);
   const [filter, setFilter] = useState({ search: '', mandatory: 'all', priority: 'all', purchased: 'all' });
   const [searchVal, setSearchVal] = useState('');
@@ -944,13 +841,10 @@ const CategoryView = ({ category, items, settings, onBack, onToggle, onEdit, onD
           <ItemCard
             key={item.id}
             item={item}
-            settings={settings}
             onToggle={onToggle}
             onEdit={onEdit}
             onDelete={onDelete}
             onAddComment={onAddComment}
-            onChangeMonth={onChangeMonth}
-            onTogglePin={onTogglePin}
             celebrating={celebratingId === item.id}
           />
         ))}
@@ -976,221 +870,108 @@ const CategoryView = ({ category, items, settings, onBack, onToggle, onEdit, onD
 
 
 
-
-// Timeline View (all items grouped by month)
-const TimelineView = ({ items, settings, onBack, onToggle, onEdit, onDelete, onAddComment, onChangeMonth, onTogglePin, celebratingId }) => {
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [filter, setFilter] = useState({ search: '', category: 'all', mandatory: 'all', purchased: 'no' });
-  const [searchVal, setSearchVal] = useState('');
-  const searchTimer = useRef(null);
-
-  const handleSearch = (v) => {
-    setSearchVal(v);
-    clearTimeout(searchTimer.current);
-    searchTimer.current = setTimeout(() => setFilter(f => ({ ...f, search: v })), 250);
-  };
-
-  const monthIndex = (m) => {
-    const idx = MONTHS.indexOf(m);
-    return idx === -1 ? 999 : idx;
-  };
-
-  const filtered = useMemo(() => {
-    return items
-      .filter(i => {
-        if (filter.purchased === 'no' && i.purchased) return false;
-        if (filter.purchased === 'yes' && !i.purchased) return false;
-        if (filter.search && !(i.item || '').toLowerCase().includes(filter.search.toLowerCase())) return false;
-        if (filter.category !== 'all' && i.category !== filter.category) return false;
-        if (filter.mandatory === 'essential' && !i.mandatory) return false;
-        if (filter.mandatory === 'optional' && i.mandatory) return false;
-        return true;
-      })
-      .sort((a, b) => {
-        const ma = monthIndex(a.targetMonth);
-        const mb = monthIndex(b.targetMonth);
-        if (ma !== mb) return ma - mb;
-        const pa = PRIORITY_ORDER[a.priority] ?? 3;
-        const pb = PRIORITY_ORDER[b.priority] ?? 3;
-        if (pa !== pb) return pa - pb;
-        return (a.item || '').localeCompare(b.item || '');
-      });
-  }, [items, filter]);
-
-  const grouped = useMemo(() => {
-    const g = {};
-    filtered.forEach(i => { (g[i.targetMonth] ||= []).push(i); });
-    // Ensure consistent month order
-    const ordered = {};
-    MONTHS.forEach(m => { if (g[m] && g[m].length) ordered[m] = g[m]; });
-    // Any unknown months at end
-    Object.keys(g).forEach(m => { if (!ordered[m]) ordered[m] = g[m]; });
-    return ordered;
-  }, [filtered]);
-
-  const total = filtered.length;
-  const done = filtered.filter(i => i.purchased).length;
-
-  return (
-    <div style={{ minHeight: '100vh', background: '#faf9f7', paddingBottom: 80 }}>
-      <div style={{ padding: '24px 20px 0', maxWidth: 720, margin: '0 auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-          <button onClick={onBack} style={{ border: 'none', background: '#f5f3f0', borderRadius: 10, padding: '8px 14px', cursor: 'pointer', color: '#57534e', fontFamily: 'Inter', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
-            ← Back
-          </button>
-          <div style={{ flex: 1 }}>
-            <h2 className="serif" style={{ fontSize: 28 }}>Timeline</h2>
-            <div style={{ fontSize: 12, color: '#a8a29e', marginTop: 2 }}>
-              {done} of {total} purchased
-            </div>
-          </div>
-          <button onClick={() => setFilterOpen(!filterOpen)}
-            style={{ border: '1px solid #ebe7e0', background: filterOpen ? '#e8ebe7' : 'white', borderRadius: 10, padding: '8px 14px', cursor: 'pointer', color: '#57534e', fontFamily: 'Inter', fontSize: 13 }}>
-            Filter
-          </button>
-        </div>
-
-        {filterOpen && (
-          <div style={{ background: 'white', border: '1px solid #ebe7e0', borderRadius: 16, padding: 16, marginBottom: 16, display: 'grid', gap: 12 }}>
-            <input className="input-field" value={searchVal} onChange={e => handleSearch(e.target.value)} placeholder="Search items..." />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-              <select className="input-field" value={filter.category} onChange={e => setFilter(f => ({ ...f, category: e.target.value }))} style={{ padding: '8px 10px', fontSize: 13 }}>
-                <option value="all">All Categories</option>
-                {Object.entries(CATEGORY_INFO).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-              </select>
-              <select className="input-field" value={filter.mandatory} onChange={e => setFilter(f => ({ ...f, mandatory: e.target.value }))} style={{ padding: '8px 10px', fontSize: 13 }}>
-                <option value="all">All Items</option>
-                <option value="essential">Essential</option>
-                <option value="optional">Optional</option>
-              </select>
-              <select className="input-field" value={filter.purchased} onChange={e => setFilter(f => ({ ...f, purchased: e.target.value }))} style={{ padding: '8px 10px', fontSize: 13 }}>
-                <option value="no">To Buy</option>
-                <option value="yes">Purchased</option>
-                <option value="all">All Status</option>
-              </select>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div style={{ padding: '0 20px', maxWidth: 720, margin: '0 auto', display: 'grid', gap: 16 }}>
-        {Object.keys(grouped).length === 0 && (
-          <div style={{ textAlign: 'center', padding: '60px 20px', color: '#a8a29e', fontSize: 14 }}>
-            No items found
-          </div>
-        )}
-
-        {Object.entries(grouped).map(([month, monthItems]) => {
-          const monthBudget = monthItems.reduce((s, i) => s + (Number(i.estimatedCost) || 0), 0);
-          const monthIdentified = monthItems.reduce((s, i) => s + (Number(i.productPrice) || 0), 0);
-          return (
-            <div key={month} style={{ background: 'white', border: '1px solid #ebe7e0', borderRadius: 18, overflow: 'hidden' }}>
-              <div style={{ padding: '14px 16px', borderBottom: '1px solid #f5f3f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div className="serif" style={{ fontSize: 18, color: '#44403c' }}>{month}</div>
-                <div style={{ display: 'grid', justifyItems: 'end', gap: 2 }}>
-                  <div style={{ fontSize: 12, color: '#a8a29e' }}>{monthItems.filter(i => i.purchased).length} / {monthItems.length}</div>
-                  <div style={{ fontSize: 11, color: '#a8a29e' }}>Budget {fmt(monthBudget)} • Identified {fmt(monthIdentified)}</div>
-                </div>
-              </div>
-              <div style={{ display: 'grid' }}>
-                {monthItems.map((item, idx) => (
-                  <div key={item.id} style={{ borderBottom: idx < monthItems.length - 1 ? '1px solid #f5f3f0' : 'none', padding: '0 16px' }}>
-                    <ItemCard
-                      item={item}
-                      settings={settings}
-                      variant="line"
-                      showCategoryTag
-                      onToggle={onToggle}
-                      onEdit={onEdit}
-                      onDelete={onDelete}
-                      onAddComment={onAddComment}
-                      onChangeMonth={onChangeMonth}
-                      onTogglePin={onTogglePin}
-                      celebrating={celebratingId === item.id}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
 // Purchased Items Modal
 const PurchasedModal = ({ items, onClose, onToggle }) => {
-  const purchased = useMemo(() => items.filter(i => i.purchased).sort((a,b) => (a.category||'').localeCompare(b.category||'') || (a.item||'').localeCompare(b.item||'')), [items]);
-  const spentTotal = useMemo(() => purchased.reduce((s, i) => {
-    const val = (i.actualCost ?? i.productPrice ?? 0);
-    const n = typeof val === 'string' ? parseFloat(val) : val;
-    return s + (Number.isFinite(n) ? n : 0);
-  }, 0), [purchased]);
-  const totalsByCategory = useMemo(() => {
-    const t = {};
-    purchased.forEach(i => {
-      const key = i.category || 'Other';
-      const val = (i.actualCost ?? i.productPrice ?? 0);
-      const n = typeof val === 'string' ? parseFloat(val) : val;
-      t[key] = (t[key] || 0) + (Number.isFinite(n) ? n : 0);
-    });
-    return t;
-  }, [purchased]);
+  const purchased = useMemo(
+    () => items
+      .filter(i => i.purchased)
+      .sort((a, b) =>
+        (a.category || '').localeCompare(b.category || '') ||
+        (a.item || '').localeCompare(b.item || '')
+      ),
+    [items]
+  );
+
+  const costFor = (i) => (i.actualCost ?? i.productPrice ?? 0);
+
+  const spentTotal = useMemo(
+    () => purchased.reduce((s, i) => s + costFor(i), 0),
+    [purchased]
+  );
+
   const grouped = useMemo(() => {
     const g = {};
     purchased.forEach(i => { (g[i.category] ||= []).push(i); });
     return g;
   }, [purchased]);
 
+  const totalsByCategory = useMemo(() => {
+    const t = {};
+    for (const cat of Object.keys(grouped)) {
+      t[cat] = grouped[cat].reduce((s, i) => s + costFor(i), 0);
+    }
+    return t;
+  }, [grouped]);
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <div>
-            <h2 className="serif" style={{ fontSize: 24 }}>Purchased</h2>
-            <div style={{ fontSize: 12, color: '#a8a29e', marginTop: 2 }}>Total spent: {fmt(spentTotal)}</div>
-          </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <h2 className="serif" style={{ fontSize: 24 }}>Purchased</h2>
           <button onClick={onClose} style={{ color: '#a8a29e', background: 'none', border: 'none', cursor: 'pointer', fontSize: 20 }}>✕</button>
         </div>
 
         {purchased.length === 0 ? (
           <div style={{ fontSize: 14, color: '#78716c' }}>Nothing marked as purchased yet.</div>
         ) : (
-          <div style={{ display: 'grid', gap: 16 }}>
-            {Object.keys(grouped).map(cat => (
-              <div key={cat} style={{ border: '1px solid #ebe7e0', borderRadius: 16, background: 'white', padding: 14 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                  <span style={{ fontSize: 18 }}>{(CATEGORY_INFO[cat] && CATEGORY_INFO[cat].emoji) || '✔️'}</span>
-                  <div style={{ fontSize: 14, color: '#57534e', fontWeight: 500 }}>{(CATEGORY_INFO[cat] && CATEGORY_INFO[cat].label) || cat}</div>
-                  <div style={{ fontSize: 12, color: '#a8a29e' }}>({grouped[cat].length})</div>
-                  <div style={{ marginLeft: 'auto', fontSize: 12, color: '#78716c' }}>{fmt(totalsByCategory[cat] || 0)}</div>
-                </div>
-                <div style={{ display: 'grid', gap: 8 }}>
-                  {grouped[cat].map(i => (
-                    <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
-                      <div style={{ fontSize: 13, color: '#57534e' }}>{i.item}</div>
-                      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexShrink: 0 }}>
-                        {(i.actualCost ?? i.productPrice) ? <div style={{ fontSize: 12, color: '#a8a29e' }}>{fmt(i.actualCost ?? i.productPrice)}</div> : null}
-                        <button onClick={() => onToggle && onToggle(i.id)}
-                          style={{ padding: '6px 10px', border: '1px solid #ebe7e0', borderRadius: 10, background: '#faf9f7', cursor: 'pointer', color: '#57534e', fontFamily: 'Inter', fontSize: 12 }}>
-                          Unmark
-                        </button>
-                      </div>
+          <>
+            <div style={{ fontSize: 13, color: '#a8a29e', marginBottom: 14 }}>
+              {purchased.length} item{purchased.length !== 1 ? 's' : ''}
+            </div>
+
+            <div style={{ display: 'grid', gap: 16 }}>
+              {Object.keys(grouped).map(cat => (
+                <div key={cat} style={{ border: '1px solid #ebe7e0', borderRadius: 16, background: 'white', padding: 14 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 18 }}>{(CATEGORY_INFO[cat] && CATEGORY_INFO[cat].emoji) || '✔️'}</span>
+                      <div style={{ fontSize: 14, color: '#57534e', fontWeight: 500 }}>{(CATEGORY_INFO[cat] && CATEGORY_INFO[cat].label) || cat}</div>
+                      <div style={{ fontSize: 12, color: '#a8a29e' }}>({grouped[cat].length})</div>
                     </div>
-                  ))}
+                    <div style={{ fontSize: 14, color: '#78716c', fontWeight: 500 }}>
+                      {fmt(totalsByCategory[cat] || 0)}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gap: 8 }}>
+                    {grouped[cat].map(i => (
+                      <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+                        <div style={{ fontSize: 13, color: '#57534e' }}>{i.item}</div>
+                        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexShrink: 0 }}>
+                          <div style={{ fontSize: 12, color: '#a8a29e' }}>{fmt(costFor(i))}</div>
+                          <button
+                            onClick={() => onToggle && onToggle(i.id)}
+                            style={{ padding: '6px 10px', border: '1px solid #ebe7e0', borderRadius: 10, background: '#faf9f7', cursor: 'pointer', color: '#57534e', fontSize: 12 }}
+                          >
+                            Unmark
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+
+            <div style={{
+              marginTop: 20,
+              paddingTop: 14,
+              borderTop: '1px solid #ebe7e0',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <span style={{ fontSize: 13, color: '#a8a29e' }}>Total</span>
+              <span style={{ fontSize: 18, fontWeight: 500, color: '#44403c' }}>{fmt(spentTotal)}</span>
+            </div>
+          </>
         )}
       </div>
     </div>
   );
 };
-
 // Home Dashboard
-const HomeDashboard = ({ items, settings, updatesRaw, userName, onSetUserName, onMarkUpdatesSeen, hasNewUpdates, hideActivityPanel, onHideActivityPanel, onOpenPurchased, onCategoryClick, onToggle, onEdit, onDelete, onAddComment, onChangeMonth, onTogglePin, celebratingId, onOpenSettings, onOpenTimeline, onAdd }) => {
+const HomeDashboard = ({ items, settings, updatesRaw, userName, onSetUserName, onMarkUpdatesSeen, hasNewUpdates, hideActivityPanel, onHideActivityPanel, onOpenPurchased, onCategoryClick, onToggle, celebratingId, onOpenSettings, onAdd }) => {
   const weeks = weeksUntil(settings.dueDate);
   const total = items.length;
   const done = items.filter(i => i.purchased).length;
@@ -1199,12 +980,8 @@ const HomeDashboard = ({ items, settings, updatesRaw, userName, onSetUserName, o
   // Budget stats
   const estimated = items.reduce((s, i) => s + (i.estimatedCost || 0), 0);
   const identified = items.reduce((s, i) => s + (i.productPrice || 0), 0);
-  const spent = items.reduce((s, i) => {
-    const val = (i.purchased ? (i.actualCost ?? i.productPrice ?? 0) : 0);
-    const n = typeof val === 'string' ? parseFloat(val) : val;
-    return s + (Number.isFinite(n) ? n : 0);
-  }, 0);
-const saving = estimated - spent;
+  const spent = items.reduce((s, i) => s + (i.actualCost || 0), 0);
+  const saving = estimated - spent;
 
 
 // Recent activity (signal layer): last 7 days, max 5 unique items
@@ -1252,7 +1029,7 @@ const describeUpdate = (u) => {
   return "updated";
 };
   // Focus items: next up based on timeline (earliest month first), then high ticket value, then essential/priority
-  const focusPinned = useMemo(() => {
+  const focusItems = useMemo(() => {
     const open = items.filter(i => !i.purchased);
     if (open.length === 0) return [];
 
@@ -1261,46 +1038,18 @@ const describeUpdate = (u) => {
       return idx === -1 ? 999 : idx;
     };
 
-    return open
-      .filter(i => !!i.pinnedFocus)
-      .sort((a, b) => {
-        const ma = monthIndex(a.targetMonth);
-        const mb = monthIndex(b.targetMonth);
-        if (ma !== mb) return ma - mb;
-        const pa = (PRIORITY_ORDER[a.priority] !== undefined ? PRIORITY_ORDER[a.priority] : 3);
-        const pb = (PRIORITY_ORDER[b.priority] !== undefined ? PRIORITY_ORDER[b.priority] : 3);
-        if (pa !== pb) return pa - pb;
-        const ca = -(Math.max(a.productPrice || 0, a.estimatedCost || 0));
-        const cb = -(Math.max(b.productPrice || 0, b.estimatedCost || 0));
-        return ca - cb;
-      });
-  }, [items]);
+    const earliest = Math.min(...open.map(i => monthIndex(i.targetMonth)));
 
-  const focusSuggested = useMemo(() => {
-    const open = items.filter(i => !i.purchased);
-    if (open.length === 0) return [];
-
-    const monthIndex = (m) => {
-      const idx = MONTHS.indexOf(m);
-      return idx === -1 ? 999 : idx;
-    };
-
-    const pinnedIds = new Set(open.filter(i => !!i.pinnedFocus).map(i => i.id));
-    const unpinned = open.filter(i => !pinnedIds.has(i.id));
-    if (unpinned.length === 0) return [];
-
-    const earliest = Math.min(...unpinned.map(i => monthIndex(i.targetMonth)));
-
-    // Suggestion pool: earliest month first, then next month as overflow
-    const candidates = unpinned.filter(i => {
+    // Focus on items due in the earliest month; if fewer than 4, pull from the next month too
+    const candidates = open.filter(i => {
       const idx = monthIndex(i.targetMonth);
-      return idx === earliest || idx === earliest + 1;
+      return idx === earliest || (idx === earliest + 1);
     });
 
     const score = (i) => {
       const idx = monthIndex(i.targetMonth);
-      const cost = -(Math.max(i.productPrice || 0, i.estimatedCost || 0)); // higher ticket first
-      const essentialBoost = i.mandatory ? -1 : 0;
+      const cost = -(Math.max(i.productPrice || 0, i.estimatedCost || 0)); // higher ticket first, prefers identified price
+      const essentialBoost = i.mandatory ? -1 : 0; // slight bump for essentials
       const pr = (PRIORITY_ORDER[i.priority] !== undefined ? PRIORITY_ORDER[i.priority] : 3);
       return [idx, cost, essentialBoost + pr];
     };
@@ -1315,7 +1064,6 @@ const describeUpdate = (u) => {
       })
       .slice(0, 4);
   }, [items]);
-
 
   // Category stats
   const catStats = useMemo(() => {
@@ -1355,7 +1103,7 @@ const describeUpdate = (u) => {
 
         {/* Due date & progress */}
         <div className="fade-in fade-in-delay-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 28, marginBottom: 28 }}>
-          <div onClick={onOpenTimeline} style={{ background: 'white', border: '1px solid #ebe7e0', borderRadius: 20, padding: '20px', cursor: 'pointer' }}>
+          <div onClick={onOpenPurchased} style={{ background: 'white', border: '1px solid #ebe7e0', borderRadius: 20, padding: '20px', cursor: 'pointer' }}>
             <Label>Due Date</Label>
             <div className="serif" style={{ fontSize: 22, marginTop: 4 }}>{formatDate(settings.dueDate)}</div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 8 }}>
@@ -1428,68 +1176,30 @@ const describeUpdate = (u) => {
             </div>
           </div>
           <div style={{ background: 'white', border: '1px solid #ebe7e0', borderRadius: 20, overflow: 'hidden' }}>
-            {(focusPinned.length === 0 && focusSuggested.length === 0) && (
+            {focusItems.length === 0 && (
               <div style={{ padding: '32px', textAlign: 'center', color: '#a8a29e', fontSize: 14 }}>🎉 All urgent items done!</div>
             )}
-
-            {focusPinned.length > 0 && (
-              <>
-                <div style={{ padding: '14px 20px', fontSize: 12, color: '#a8a29e', background: '#faf9f7', borderBottom: '1px solid #f5f3f0' }}>
-                  📌 Pinned
-                </div>
-                {focusPinned.map((item, idx) => (
-                  <div key={item.id} style={{
-                    borderBottom: idx < focusPinned.length - 1 ? '1px solid #f5f3f0' : 'none',
-                    padding: '0 20px'
-                  }}>
-                <ItemCard
-                  item={item}
-                  settings={settings}
-                  variant="line"
-                  showCategoryTag
-                  onToggle={onToggle}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
-                  onAddComment={onAddComment}
-                  onChangeMonth={onChangeMonth}
-                  onTogglePin={onTogglePin}
-                  celebrating={celebratingId === item.id}
-                />
+            {focusItems.map((item, idx) => (
+              <div key={item.id} style={{
+                display: 'flex', alignItems: 'center', gap: 14, padding: '14px 20px',
+                borderBottom: idx < focusItems.length - 1 ? '1px solid #f5f3f0' : 'none',
+                position: 'relative'
+              }}>
+                <CheckBox checked={item.purchased} onChange={() => onToggle(item.id)} celebrating={celebratingId === item.id} />
+                <div style={{ flex: 1 }}>
+                  <div className="serif" style={{ fontSize: 18, textDecoration: item.purchased ? 'line-through' : 'none' }}>{item.item}</div>
+                  <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
+                    <span style={{ fontSize: 11, color: '#a8a29e' }}>{item.targetMonth}</span>
+                    <span style={{ fontSize: 11, color: '#a8a29e' }}>·</span>
+                    <span style={{ fontSize: 11, color: '#a8a29e' }}>{(CATEGORY_INFO[item.category] && CATEGORY_INFO[item.category].label)}</span>
                   </div>
-                ))}
-              </>
-            )}
-
-            {focusSuggested.length > 0 && (
-              <>
-                {focusPinned.length > 0 && (
-                  <div style={{ height: 1, background: '#ebe7e0' }} />
+                </div>
+                <PriorityTag priority={item.priority} />
+                {item.estimatedCost > 0 && (
+                  <span style={{ fontSize: 13, color: '#8a9688', fontWeight: 500, whiteSpace: 'nowrap' }}>{fmt(item.estimatedCost)}</span>
                 )}
-                <div style={{ padding: '14px 20px', fontSize: 12, color: '#a8a29e', background: '#faf9f7', borderBottom: '1px solid #f5f3f0' }}>
-                  ✨ Suggested (top 4)
-                </div>
-                {focusSuggested.map((item, idx) => (
-                  <div key={item.id} style={{
-                    borderBottom: idx < focusSuggested.length - 1 ? '1px solid #f5f3f0' : 'none',
-                    padding: '0 20px'
-                  }}>
-                <ItemCard
-                  item={item}
-                  settings={settings}
-                  variant="line"
-                  showCategoryTag
-                  onToggle={onToggle}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
-                  onAddComment={onAddComment}
-                  onChangeMonth={onChangeMonth}
-                  onTogglePin={onTogglePin}
-                  celebrating={celebratingId === item.id}
-                />
-                  </div>
-                ))}
-              </>
-            )}
+              </div>
+            ))}
           </div>
         </div>
 
@@ -1548,7 +1258,7 @@ const App = () => {
   const [items, setItems] = useState([]);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
-  const [screen, setScreen] = useState('home'); // 'home' | 'category' | 'timeline'
+  const [screen, setScreen] = useState('home'); // 'home' | 'category'
   const [activeCategory, setActiveCategory] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -1623,13 +1333,23 @@ unsubUpdates = db.collection('updates').orderBy('at', 'desc').limit(50).onSnapsh
   const toggleItem = useCallback(async (id) => {
     const item = items.find(i => i.id === id);
     if (!item) return;
-    const wasPurchased = item.purchased;
+
+    const wasPurchased = !!item.purchased;
     const nextPurchased = !wasPurchased;
-    // If marking as purchased and no actualCost set, default actualCost to productPrice (if available)
-    const nextActualCost = nextPurchased ? (item.actualCost ?? item.productPrice ?? null) : item.actualCost ?? null;
-    const payload = nextPurchased ? { purchased: true, actualCost: nextActualCost } : { purchased: false };
-    await db.collection('items').doc(String(id)).update(payload);
-await logUpdate({ type: UPDATE_EVENT_TYPES.PURCHASED_TOGGLED, itemId: id, itemName: item.item, category: item.category });
+
+    // Keep pricing logic consistent:
+    // - when marking purchased: if no actualCost yet and a productPrice exists, set actualCost = productPrice
+    // - when unmarking: clear actualCost so "Paid" doesn't linger
+    const update = { purchased: nextPurchased };
+    if (nextPurchased) {
+      if (item.actualCost == null && item.productPrice != null) update.actualCost = item.productPrice;
+    } else {
+      update.actualCost = null;
+    }
+
+    await db.collection('items').doc(String(id)).update(update);
+    await logUpdate({ type: UPDATE_EVENT_TYPES.PURCHASED_TOGGLED, itemId: id, itemName: item.item, category: item.category });
+
     if (!wasPurchased) {
       setCelebratingId(id);
       setTimeout(() => setCelebratingId(null), 1000);
@@ -1667,29 +1387,7 @@ await logUpdate({ type: UPDATE_EVENT_TYPES.PURCHASED_TOGGLED, itemId: id, itemNa
     await logUpdate({ type: UPDATE_EVENT_TYPES.COMMENT_ADDED, itemId: id, itemName: item.item, category: item.category });
   }, [items]);
 
-  
-  const changeMonth = useCallback(async (id, targetMonth) => {
-    const item = items.find(i => i.id === id);
-    if (!item) return;
-    await db.collection('items').doc(String(id)).update({ targetMonth });
-  }, [items]);
-
-  const togglePin = useCallback(async (id) => {
-    // Optimistic UI update so the 📌 tag shows immediately
-    const current = items.find(i => i.id === id);
-    if (!current) return;
-
-    setItems(prev => prev.map(i => i.id === id ? { ...i, pinnedFocus: !i.pinnedFocus } : i));
-
-    try {
-      await db.collection('items').doc(String(id)).update({ pinnedFocus: !current.pinnedFocus });
-    } catch (e) {
-      // Revert if write fails
-      setItems(prev => prev.map(i => i.id === id ? { ...i, pinnedFocus: current.pinnedFocus } : i));
-      console.error(e);
-    }
-  }, [items]);
-const saveSettings = useCallback(async (newSettings) => {
+  const saveSettings = useCallback(async (newSettings) => {
     await db.collection('settings').doc('general').set(newSettings);
     setSettings(newSettings);
   }, []);
@@ -1775,15 +1473,8 @@ const saveUserName = useCallback((name) => {
           hideActivityPanel={hideActivityPanel}
           onHideActivityPanel={setHideActivityPanel}
           onOpenPurchased={() => setShowPurchasedModal(true)}
-          onOpenTimeline={() => setScreen('timeline')}
-
           onCategoryClick={cat => { setActiveCategory(cat); setScreen('category'); }}
           onToggle={toggleItem}
-          onEdit={handleEdit}
-          onDelete={deleteItem}
-          onAddComment={addComment}
-          onChangeMonth={changeMonth}
-          onTogglePin={togglePin}
           celebratingId={celebratingId}
           onOpenSettings={() => setShowSettings(true)}
           onAdd={handleAdd}
@@ -1804,22 +1495,6 @@ const saveUserName = useCallback((name) => {
         />
       )}
 
-      {screen === 'timeline' && (
-        <TimelineView
-          items={items}
-          settings={settings}
-          onBack={() => setScreen('home')}
-          onToggle={toggleItem}
-          onEdit={handleEdit}
-          onDelete={deleteItem}
-          onAddComment={addComment}
-          onChangeMonth={changeMonth}
-          onTogglePin={togglePin}
-          celebratingId={celebratingId}
-        />
-      )}
-
-
       {/* Item Form Modal */}
       {showAddForm && (
         <ItemFormModal
@@ -1836,7 +1511,8 @@ const saveUserName = useCallback((name) => {
   <NameModal
     initialName={userName}
     onSave={saveUserName}
-    onClose={dismissNameModal}
+    onClose={() => setShowNameModal(false)}
+    onDismiss={dismissNameModal}
   />
 )}
 
