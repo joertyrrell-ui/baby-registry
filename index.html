@@ -491,9 +491,8 @@ const handleSave = () => {
     onSave({
       ...form,
       estimatedCost: parseFloat(form.estimatedCost) || 0,
-      // Treat 0 as a valid value (avoid truthy checks)
-      productPrice: (form.productPrice !== '' && form.productPrice !== null && typeof form.productPrice !== 'undefined') ? parseFloat(form.productPrice) : null,
-      actualCost: (form.actualCost !== '' && form.actualCost !== null && typeof form.actualCost !== 'undefined') ? parseFloat(form.actualCost) : null,
+      productPrice: form.productPrice ? parseFloat(form.productPrice) : null,
+      actualCost: form.actualCost ? parseFloat(form.actualCost) : null,
       comments: form.comments || []
     });
   };
@@ -539,8 +538,8 @@ const handleSave = () => {
             <Label>Pricing</Label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginTop: 8 }}>
               <Input label="Budget" type="number" value={form.estimatedCost} onChange={e => set('estimatedCost', e.target.value)} placeholder="0" />
-              <Input label="Product Price" type="number" value={(form.productPrice ?? '')} onChange={e => set('productPrice', e.target.value)} placeholder="0" />
-              {form.purchased && <Input label="Actual Cost" type="number" value={(form.actualCost ?? '')} onChange={e => set('actualCost', e.target.value)} placeholder="0" />}
+              <Input label="Product Price" type="number" value={form.productPrice || ''} onChange={e => set('productPrice', e.target.value)} placeholder="0" />
+              {form.purchased && <Input label="Actual Cost" type="number" value={form.actualCost || ''} onChange={e => set('actualCost', e.target.value)} placeholder="0" />}
             </div>
           </div>
 
@@ -724,13 +723,6 @@ const ItemCard = ({ item, settings, onToggle, onEdit, onDelete, onAddComment, on
   const latestComment = item.comments && item.comments.length > 0
     ? item.comments[item.comments.length - 1] : null;
 
-  // "Paid" should always reflect what was actually paid, falling back to product price when purchased.
-  // Use nullish checks so £0 doesn't disappear.
-  const paidValue = item.purchased ? (item.actualCost ?? item.productPrice ?? null) : null;
-  const hasBudget = (Number(item.estimatedCost) || 0) > 0;
-  const hasPrice = item.productPrice !== null && item.productPrice !== '' && typeof item.productPrice !== 'undefined';
-  const hasPaid = paidValue !== null && paidValue !== '' && typeof paidValue !== 'undefined';
-
   const handleAddComment = () => {
     if (!commentText.trim()) return;
     onAddComment(item.id, { text: commentText, author: commentAuthor, timestamp: new Date().toISOString() });
@@ -793,11 +785,11 @@ const ItemCard = ({ item, settings, onToggle, onEdit, onDelete, onAddComment, on
                 {item.assignedTo && <span className="tag">{item.assignedTo}</span>}
               </div>
 
-              {(hasBudget || hasPrice || hasPaid) && (
+              {(item.estimatedCost || item.productPrice || item.actualCost) && (
                 <div style={{ display: 'flex', gap: 12, marginBottom: 6 }}>
-                  {hasBudget && <span style={{ fontSize: 12, color: '#a8a29e' }}>Budget: {fmt(item.estimatedCost)}</span>}
-                  {hasPrice && <span style={{ fontSize: 12, color: '#6b7869' }}>Price: {fmt(item.productPrice)}</span>}
-                  {hasPaid && <span style={{ fontSize: 12, color: '#556058', fontWeight: 500 }}>Paid: {fmt(paidValue)}</span>}
+                  {item.estimatedCost > 0 && <span style={{ fontSize: 12, color: '#a8a29e' }}>Budget: {fmt(item.estimatedCost)}</span>}
+                  {item.productPrice && <span style={{ fontSize: 12, color: '#6b7869' }}>Price: {fmt(item.productPrice)}</span>}
+                  {item.actualCost && <span style={{ fontSize: 12, color: '#556058', fontWeight: 500 }}>Paid: {fmt(item.actualCost)}</span>}
                 </div>
               )}
 
@@ -1179,9 +1171,7 @@ const PurchasedModal = ({ items, onClose, onToggle }) => {
                     <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
                       <div style={{ fontSize: 13, color: '#57534e' }}>{i.item}</div>
                       <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexShrink: 0 }}>
-                        {((i.actualCost ?? i.productPrice) !== null && typeof (i.actualCost ?? i.productPrice) !== 'undefined')
-                          ? <div style={{ fontSize: 12, color: '#a8a29e' }}>{fmt(i.actualCost ?? i.productPrice)}</div>
-                          : null}
+                        {(i.actualCost ?? i.productPrice) ? <div style={{ fontSize: 12, color: '#a8a29e' }}>{fmt(i.actualCost ?? i.productPrice)}</div> : null}
                         <button onClick={() => onToggle && onToggle(i.id)}
                           style={{ padding: '6px 10px', border: '1px solid #ebe7e0', borderRadius: 10, background: '#faf9f7', cursor: 'pointer', color: '#57534e', fontFamily: 'Inter', fontSize: 12 }}>
                           Unmark
@@ -1193,6 +1183,11 @@ const PurchasedModal = ({ items, onClose, onToggle }) => {
               </div>
             ))}
           </div>
+
+            <div style={{ borderTop: '1px solid #ebe7e0', paddingTop: 12, marginTop: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: 12, color: '#a8a29e' }}>{purchased.length} items</div>
+              <div style={{ fontSize: 14, color: '#57534e', fontWeight: 600 }}>Total: {fmt(spentTotal)}</div>
+            </div>
         )}
       </div>
     </div>
