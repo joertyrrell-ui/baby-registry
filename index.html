@@ -158,8 +158,17 @@ input:focus, select:focus, textarea:focus { ring: none; }
 
 /* Show action buttons on touch devices (no hover) */
 @media (hover: none) and (pointer: coarse) {
-  .hover-actions { opacity: 1 !important; }
+  
 }
+
+
+  /* Row action buttons: hidden until hover (but always visible on touch devices) */
+  .hover-actions { opacity: 0; pointer-events: none; }
+  .item-card:hover .hover-actions { opacity: 1; pointer-events: auto; }
+  @media (hover: none) {
+    .hover-actions { opacity: 1; pointer-events: auto; }
+  }
+
 </style>
 </head>
 <body>
@@ -685,8 +694,7 @@ const MonthTagSelect = ({ value, settings, onChange, disabled }) => {
 const ItemCard = ({ item, settings, onToggle, onEdit, onDelete, onAddComment, onChangeMonth, onTogglePin, showCategoryTag, variant = 'card', celebrating }) => {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
-  const [commentAuthor, setCommentAuthor] = useState('Georgia');
-  const [hover, setHover] = useState(false);
+  const [commentAuthor, setCommentAuthor] = useState('Georgia'); 
 
   const latestComment = item.comments && item.comments.length > 0
     ? item.comments[item.comments.length - 1] : null;
@@ -708,9 +716,7 @@ const ItemCard = ({ item, settings, onToggle, onEdit, onDelete, onAddComment, on
 
   return (
     <div
-      className="transition-smooth"
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+      className="transition-smooth item-card"
       style={{
         background: variant === 'line' ? 'transparent' : 'white',
         border: variant === 'line' ? 'none' : '1px solid #ebe7e0',
@@ -784,8 +790,8 @@ const ItemCard = ({ item, settings, onToggle, onEdit, onDelete, onAddComment, on
         </div>
 
         {/* Action buttons */}
-        <div style={{ display: 'flex', gap: 4, opacity: hover ? 1 : 0, transition: 'opacity 0.2s', flexShrink: 0 }}
-          className="md:flex hover-actions">
+        <div style={{ display: 'flex', gap: 4, transition: 'opacity 0.2s', flexShrink: 0 }}
+          className="hover-actions">
           <button onClick={() => onTogglePin && onTogglePin(item.id)} title={item.pinnedFocus ? "Unpin from Focus" : "Pin to Focus"}
             style={{ padding: '6px', border: 'none', background: item.pinnedFocus ? '#e8ebe7' : '#f5f3f0', borderRadius: 8, cursor: 'pointer', color: '#78716c', fontSize: 14 }}>📌</button>
           <button onClick={() => setShowComments(!showComments)}
