@@ -1207,7 +1207,7 @@ const describeUpdate = (u) => {
       return idx === -1 ? 999 : idx;
     };
 
-    // Manual pin: always surface pinned items first (up to 4)
+    // Manual pin: show up to 4 suggested items PLUS any pinned items
     const pinned = open
       .filter(i => !!i.pinnedFocus)
       .sort((a, b) => {
@@ -1222,18 +1222,15 @@ const describeUpdate = (u) => {
         return ca - cb;
       });
 
-    const remainingSlots = Math.max(0, 4 - pinned.length);
-    if (remainingSlots === 0) return pinned.slice(0, 4);
-
     const unpinned = open.filter(i => !i.pinnedFocus);
-    if (unpinned.length === 0) return pinned.slice(0, 4);
+    if (unpinned.length === 0) return pinned; // only pinned left
 
     const earliest = Math.min(...unpinned.map(i => monthIndex(i.targetMonth)));
 
-    // Focus on items due in the earliest month; if fewer than needed, pull from the next month too
+    // Suggestion pool: earliest month first, then next month as overflow
     const candidates = unpinned.filter(i => {
       const idx = monthIndex(i.targetMonth);
-      return idx === earliest || (idx === earliest + 1);
+      return idx === earliest || idx === earliest + 1;
     });
 
     const score = (i) => {
@@ -1244,7 +1241,7 @@ const describeUpdate = (u) => {
       return [idx, cost, essentialBoost + pr];
     };
 
-    const auto = candidates
+    const suggested = candidates
       .sort((a, b) => {
         const sa = score(a);
         const sb = score(b);
@@ -1252,10 +1249,11 @@ const describeUpdate = (u) => {
         if (sa[1] !== sb[1]) return sa[1] - sb[1];
         return sa[2] - sb[2];
       })
-      .slice(0, remainingSlots);
+      .slice(0, 4);
 
-    return [...pinned.slice(0, 4), ...auto].slice(0, 4);
-  }, [items]);
+    // Return 4 suggested (max) plus any pinned extras
+    return [...suggested, ...pinned];
+}, [items]);
 
 
   // Category stats
@@ -1573,11 +1571,20 @@ unsubUpdates = db.collection('updates').orderBy('at', 'desc').limit(50).onSnapsh
   }, [items]);
 
   const togglePin = useCallback(async (id) => {
-    const item = items.find(i => i.id === id);
-    if (!item) return;
-    await db.collection('items').doc(String(id)).update({ pinnedFocus: !item.pinnedFocus });
-  }, [items]);
+    // Optimistic UI update so the 📌 tag shows immediately
+    const current = items.find(i => i.id === id);
+    if (!current) return;
 
+    setItems(prev => prev.map(i => i.id === id ? { ...i, pinnedFocus: !i.pinnedFocus } : i));
+
+    try {
+      await db.collection('items').doc(String(id)).update({ pinnedFocus: !current.pinnedFocus });
+    } catch (e) {
+      // Revert if write fails
+      setItems(prev => prev.map(i => i.id === id ? { ...i, pinnedFocus: current.pinnedFocus } : i));
+      console.error(e);
+    }
+  }, [items]);
 const saveSettings = useCallback(async (newSettings) => {
     await db.collection('settings').doc('general').set(newSettings);
     setSettings(newSettings);
