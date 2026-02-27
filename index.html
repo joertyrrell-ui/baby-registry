@@ -501,10 +501,26 @@ const ItemFormModal = ({ item, onSave, onClose, categories }) => {
               <input type="checkbox" checked={form.mandatory} onChange={e => set('mandatory', e.target.checked)} />
               Essential
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14 }}>
-              <input type="checkbox" checked={!!form.pinnedFocus} onChange={e => set('pinnedFocus', e.target.checked)} />
-              Pin to Focus
-            </label>
+            <button
+              type="button"
+              onClick={() => set('pinnedFocus', !form.pinnedFocus)}
+              title={form.pinnedFocus ? "Unpin from Focus" : "Pin to Focus"}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                cursor: 'pointer',
+                fontSize: 14,
+                border: 'none',
+                background: form.pinnedFocus ? '#e8ebe7' : 'transparent',
+                padding: '6px 10px',
+                borderRadius: 10,
+                color: '#57534e'
+              }}
+            >
+              <span style={{ fontSize: 14 }}>📌</span>
+              <span>{form.pinnedFocus ? 'Pinned to Focus' : 'Pin to Focus'}</span>
+            </button>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14 }}>
               <input type="checkbox" checked={form.purchased} onChange={e => set('purchased', e.target.checked)} />
               Purchased
