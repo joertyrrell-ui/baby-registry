@@ -1198,7 +1198,7 @@ const describeUpdate = (u) => {
   return "updated";
 };
   // Focus items: next up based on timeline (earliest month first), then high ticket value, then essential/priority
-  const focusItems = useMemo(() => {
+  const focusPinned = useMemo(() => {
     const open = items.filter(i => !i.purchased);
     if (open.length === 0) return [];
 
@@ -1207,8 +1207,7 @@ const describeUpdate = (u) => {
       return idx === -1 ? 999 : idx;
     };
 
-    // Manual pin: show up to 4 suggested items PLUS any pinned items
-    const pinned = open
+    return open
       .filter(i => !!i.pinnedFocus)
       .sort((a, b) => {
         const ma = monthIndex(a.targetMonth);
@@ -1221,9 +1220,20 @@ const describeUpdate = (u) => {
         const cb = -(Math.max(b.productPrice || 0, b.estimatedCost || 0));
         return ca - cb;
       });
+  }, [items]);
 
-    const unpinned = open.filter(i => !i.pinnedFocus);
-    if (unpinned.length === 0) return pinned; // only pinned left
+  const focusSuggested = useMemo(() => {
+    const open = items.filter(i => !i.purchased);
+    if (open.length === 0) return [];
+
+    const monthIndex = (m) => {
+      const idx = MONTHS.indexOf(m);
+      return idx === -1 ? 999 : idx;
+    };
+
+    const pinnedIds = new Set(open.filter(i => !!i.pinnedFocus).map(i => i.id));
+    const unpinned = open.filter(i => !pinnedIds.has(i.id));
+    if (unpinned.length === 0) return [];
 
     const earliest = Math.min(...unpinned.map(i => monthIndex(i.targetMonth)));
 
@@ -1241,7 +1251,7 @@ const describeUpdate = (u) => {
       return [idx, cost, essentialBoost + pr];
     };
 
-    const suggested = candidates
+    return candidates
       .sort((a, b) => {
         const sa = score(a);
         const sb = score(b);
@@ -1250,10 +1260,7 @@ const describeUpdate = (u) => {
         return sa[2] - sb[2];
       })
       .slice(0, 4);
-
-    // Return 4 suggested (max) plus any pinned extras
-    return [...suggested, ...pinned];
-}, [items]);
+  }, [items]);
 
 
   // Category stats
@@ -1367,14 +1374,20 @@ const describeUpdate = (u) => {
             </div>
           </div>
           <div style={{ background: 'white', border: '1px solid #ebe7e0', borderRadius: 20, overflow: 'hidden' }}>
-            {focusItems.length === 0 && (
+            {(focusPinned.length === 0 && focusSuggested.length === 0) && (
               <div style={{ padding: '32px', textAlign: 'center', color: '#a8a29e', fontSize: 14 }}>🎉 All urgent items done!</div>
             )}
-            {focusItems.map((item, idx) => (
-              <div key={item.id} style={{
-                borderBottom: idx < focusItems.length - 1 ? '1px solid #f5f3f0' : 'none',
-                padding: '0 20px'
-              }}>
+
+            {focusPinned.length > 0 && (
+              <>
+                <div style={{ padding: '14px 20px', fontSize: 12, color: '#a8a29e', background: '#faf9f7', borderBottom: '1px solid #f5f3f0' }}>
+                  📌 Pinned
+                </div>
+                {focusPinned.map((item, idx) => (
+                  <div key={item.id} style={{
+                    borderBottom: idx < focusPinned.length - 1 ? '1px solid #f5f3f0' : 'none',
+                    padding: '0 20px'
+                  }}>
                 <ItemCard
                   item={item}
                   settings={settings}
@@ -1388,8 +1401,41 @@ const describeUpdate = (u) => {
                   onTogglePin={onTogglePin}
                   celebrating={celebratingId === item.id}
                 />
-              </div>
-            ))}
+                  </div>
+                ))}
+              </>
+            )}
+
+            {focusSuggested.length > 0 && (
+              <>
+                {focusPinned.length > 0 && (
+                  <div style={{ height: 1, background: '#ebe7e0' }} />
+                )}
+                <div style={{ padding: '14px 20px', fontSize: 12, color: '#a8a29e', background: '#faf9f7', borderBottom: '1px solid #f5f3f0' }}>
+                  ✨ Suggested (top 4)
+                </div>
+                {focusSuggested.map((item, idx) => (
+                  <div key={item.id} style={{
+                    borderBottom: idx < focusSuggested.length - 1 ? '1px solid #f5f3f0' : 'none',
+                    padding: '0 20px'
+                  }}>
+                <ItemCard
+                  item={item}
+                  settings={settings}
+                  variant="line"
+                  showCategoryTag
+                  onToggle={onToggle}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  onAddComment={onAddComment}
+                  onChangeMonth={onChangeMonth}
+                  onTogglePin={onTogglePin}
+                  celebrating={celebratingId === item.id}
+                />
+                  </div>
+                ))}
+              </>
+            )}
           </div>
         </div>
 
