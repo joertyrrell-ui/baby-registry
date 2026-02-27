@@ -1068,33 +1068,40 @@ const TimelineView = ({ items, settings, onBack, onToggle, onEdit, onDelete, onA
           </div>
         )}
 
-        {Object.entries(grouped).map(([month, monthItems]) => (
-          <div key={month} style={{ background: 'white', border: '1px solid #ebe7e0', borderRadius: 18, overflow: 'hidden' }}>
-            <div style={{ padding: '14px 16px', borderBottom: '1px solid #f5f3f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div className="serif" style={{ fontSize: 18, color: '#44403c' }}>{month}</div>
-              <div style={{ fontSize: 12, color: '#a8a29e' }}>{monthItems.filter(i => i.purchased).length} / {monthItems.length}</div>
-            </div>
-            <div style={{ display: 'grid' }}>
-              {monthItems.map((item, idx) => (
-                <div key={item.id} style={{ borderBottom: idx < monthItems.length - 1 ? '1px solid #f5f3f0' : 'none', padding: '0 16px' }}>
-                  <ItemCard
-                    item={item}
-                    settings={settings}
-                    variant="line"
-                    showCategoryTag
-                    onToggle={onToggle}
-                    onEdit={onEdit}
-                    onDelete={onDelete}
-                    onAddComment={onAddComment}
-                    onChangeMonth={onChangeMonth}
-                    onTogglePin={onTogglePin}
-                    celebrating={celebratingId === item.id}
-                  />
+        {Object.entries(grouped).map(([month, monthItems]) => {
+          const monthBudget = monthItems.reduce((s, i) => s + (Number(i.estimatedCost) || 0), 0);
+          const monthIdentified = monthItems.reduce((s, i) => s + (Number(i.productPrice) || 0), 0);
+          return (
+            <div key={month} style={{ background: 'white', border: '1px solid #ebe7e0', borderRadius: 18, overflow: 'hidden' }}>
+              <div style={{ padding: '14px 16px', borderBottom: '1px solid #f5f3f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="serif" style={{ fontSize: 18, color: '#44403c' }}>{month}</div>
+                <div style={{ display: 'grid', justifyItems: 'end', gap: 2 }}>
+                  <div style={{ fontSize: 12, color: '#a8a29e' }}>{monthItems.filter(i => i.purchased).length} / {monthItems.length}</div>
+                  <div style={{ fontSize: 11, color: '#a8a29e' }}>Budget {fmt(monthBudget)} • Identified {fmt(monthIdentified)}</div>
                 </div>
-              ))}
+              </div>
+              <div style={{ display: 'grid' }}>
+                {monthItems.map((item, idx) => (
+                  <div key={item.id} style={{ borderBottom: idx < monthItems.length - 1 ? '1px solid #f5f3f0' : 'none', padding: '0 16px' }}>
+                    <ItemCard
+                      item={item}
+                      settings={settings}
+                      variant="line"
+                      showCategoryTag
+                      onToggle={onToggle}
+                      onEdit={onEdit}
+                      onDelete={onDelete}
+                      onAddComment={onAddComment}
+                      onChangeMonth={onChangeMonth}
+                      onTogglePin={onTogglePin}
+                      celebrating={celebratingId === item.id}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -1103,6 +1110,21 @@ const TimelineView = ({ items, settings, onBack, onToggle, onEdit, onDelete, onA
 // Purchased Items Modal
 const PurchasedModal = ({ items, onClose, onToggle }) => {
   const purchased = useMemo(() => items.filter(i => i.purchased).sort((a,b) => (a.category||'').localeCompare(b.category||'') || (a.item||'').localeCompare(b.item||'')), [items]);
+  const spentTotal = useMemo(() => purchased.reduce((s, i) => {
+    const val = (i.actualCost ?? i.productPrice ?? 0);
+    const n = typeof val === 'string' ? parseFloat(val) : val;
+    return s + (Number.isFinite(n) ? n : 0);
+  }, 0), [purchased]);
+  const totalsByCategory = useMemo(() => {
+    const t = {};
+    purchased.forEach(i => {
+      const key = i.category || 'Other';
+      const val = (i.actualCost ?? i.productPrice ?? 0);
+      const n = typeof val === 'string' ? parseFloat(val) : val;
+      t[key] = (t[key] || 0) + (Number.isFinite(n) ? n : 0);
+    });
+    return t;
+  }, [purchased]);
   const grouped = useMemo(() => {
     const g = {};
     purchased.forEach(i => { (g[i.category] ||= []).push(i); });
@@ -1113,7 +1135,10 @@ const PurchasedModal = ({ items, onClose, onToggle }) => {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h2 className="serif" style={{ fontSize: 24 }}>Purchased</h2>
+          <div>
+            <h2 className="serif" style={{ fontSize: 24 }}>Purchased</h2>
+            <div style={{ fontSize: 12, color: '#a8a29e', marginTop: 2 }}>Total spent: {fmt(spentTotal)}</div>
+          </div>
           <button onClick={onClose} style={{ color: '#a8a29e', background: 'none', border: 'none', cursor: 'pointer', fontSize: 20 }}>✕</button>
         </div>
 
@@ -1127,13 +1152,14 @@ const PurchasedModal = ({ items, onClose, onToggle }) => {
                   <span style={{ fontSize: 18 }}>{(CATEGORY_INFO[cat] && CATEGORY_INFO[cat].emoji) || '✔️'}</span>
                   <div style={{ fontSize: 14, color: '#57534e', fontWeight: 500 }}>{(CATEGORY_INFO[cat] && CATEGORY_INFO[cat].label) || cat}</div>
                   <div style={{ fontSize: 12, color: '#a8a29e' }}>({grouped[cat].length})</div>
+                  <div style={{ marginLeft: 'auto', fontSize: 12, color: '#78716c' }}>{fmt(totalsByCategory[cat] || 0)}</div>
                 </div>
                 <div style={{ display: 'grid', gap: 8 }}>
                   {grouped[cat].map(i => (
                     <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
                       <div style={{ fontSize: 13, color: '#57534e' }}>{i.item}</div>
                       <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexShrink: 0 }}>
-                        {i.actualCost ? <div style={{ fontSize: 12, color: '#a8a29e' }}>{fmt(i.actualCost)}</div> : null}
+                        {(i.actualCost ?? i.productPrice) ? <div style={{ fontSize: 12, color: '#a8a29e' }}>{fmt(i.actualCost ?? i.productPrice)}</div> : null}
                         <button onClick={() => onToggle && onToggle(i.id)}
                           style={{ padding: '6px 10px', border: '1px solid #ebe7e0', borderRadius: 10, background: '#faf9f7', cursor: 'pointer', color: '#57534e', fontFamily: 'Inter', fontSize: 12 }}>
                           Unmark
