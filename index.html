@@ -123,6 +123,7 @@ input:focus, select:focus, textarea:focus { ring: none; }
   background: #ebe7e0; color: #78716c;
 }
 .tag.essential { background: #e8ebe7; color: #556058; }
+.tag.pinned { background: #eae6ff; color: #4c1d95; }
 .tag.urgent { background: #fef2f2; color: #991b1b; }
 .tag.this-week { background: #fefce8; color: #854d0e; }
 .tag.soon { background: #f0fdf4; color: #166534; }
@@ -751,6 +752,7 @@ const ItemCard = ({ item, settings, onToggle, onEdit, onDelete, onAddComment, on
               </div>
               <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 6 }}>
                 <MonthTagSelect value={item.targetMonth} settings={settings} onChange={(m) => onChangeMonth && onChangeMonth(item.id, m)} />
+                {item.pinnedFocus && <span className="tag pinned" title="Pinned to Focus">📌</span>}
                 {item.mandatory && <span className="tag essential">Essential</span>}
                 {showCategoryTag && (
                   <span className="tag">{((CATEGORY_INFO[item.category] && CATEGORY_INFO[item.category].emoji) || '')} {((CATEGORY_INFO[item.category] && CATEGORY_INFO[item.category].label) || item.category)}</span>
