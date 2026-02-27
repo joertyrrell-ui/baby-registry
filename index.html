@@ -171,6 +171,9 @@ input:focus, select:focus, textarea:focus { ring: none; }
 
 /* Mobile tidy up */
 @media (max-width: 520px) {
+    .hover-actions{display:none !important}
+    .mobile-actions{display:block}
+
   /* Item cards */
   .item-card { padding: 12px 12px !important; }
   .item-title { font-size: 22px !important; line-height: 1.1 !important; }
@@ -209,6 +212,15 @@ input:focus, select:focus, textarea:focus { ring: none; }
 
 }
 
+
+  .mobile-actions{position:absolute;top:14px;right:14px;z-index:4;display:none}
+  .mobile-actions-btn{width:44px;height:44px;border-radius:14px;border:1px solid var(--stroke);background:rgba(255,255,255,.9);box-shadow:0 10px 25px rgba(20,20,20,.06);font-size:28px;line-height:0;display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer}
+  .mobile-actions-btn:active{transform:translateY(1px)}
+  .mobile-actions-menu{position:absolute;top:48px;right:0;min-width:170px;padding:8px;border-radius:14px;background:rgba(255,255,255,.96);border:1px solid var(--stroke);box-shadow:0 18px 45px rgba(20,20,20,.12);backdrop-filter:blur(10px)}
+  .mobile-actions-menu button{width:100%;text-align:left;padding:10px 12px;border-radius:12px;border:none;background:transparent;font:inherit;color:var(--text);cursor:pointer}
+  .mobile-actions-menu button:hover{background:rgba(0,0,0,.04)}
+  .mobile-actions-menu button.danger{color:#9b2c2c}
+
 </style>
 </head>
 <body>
@@ -216,6 +228,30 @@ input:focus, select:focus, textarea:focus { ring: none; }
 
 <script type="text/babel">
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+  // Responsive helper (mobile breakpoint)
+  function useIsMobile(breakpointPx = 520) {
+    const [isMobile, setIsMobile] = useState(() => {
+      if (typeof window === "undefined") return false;
+      return window.matchMedia(`(max-width: ${breakpointPx}px)`).matches;
+    });
+
+    useEffect(() => {
+      if (typeof window === "undefined") return;
+      const mq = window.matchMedia(`(max-width: ${breakpointPx}px)`);
+      const handler = () => setIsMobile(mq.matches);
+      handler();
+      if (mq.addEventListener) mq.addEventListener("change", handler);
+      else mq.addListener(handler);
+      return () => {
+        if (mq.removeEventListener) mq.removeEventListener("change", handler);
+        else mq.removeListener(handler);
+      };
+    }, [breakpointPx]);
+
+    return isMobile;
+  }
+
 
 // Firebase init
 const firebaseConfig = {
@@ -745,6 +781,22 @@ const ItemCard = ({ item, settings, onToggle, onEdit, onDelete, onAddComment, on
   const [commentText, setCommentText] = useState('');
   const [commentAuthor, setCommentAuthor] = useState('Georgia'); 
 
+
+  const isMobile = useIsMobile();
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const actionsRef = useRef(null);
+
+  useEffect(() => {
+    if (!actionsOpen) return;
+    const onDocClick = (e) => {
+      if (actionsRef.current && !actionsRef.current.contains(e.target)) {
+        setActionsOpen(false);
+      }
+    };
+    document.addEventListener("click", onDocClick, true);
+    return () => document.removeEventListener("click", onDocClick, true);
+  }, [actionsOpen]);
+
   const latestComment = item.comments && item.comments.length > 0
     ? item.comments[item.comments.length - 1] : null;
 
@@ -841,21 +893,93 @@ const ItemCard = ({ item, settings, onToggle, onEdit, onDelete, onAddComment, on
         </div>
 
         {/* Action buttons */}
-        <div style={{ display: 'flex', gap: 4, transition: 'opacity 0.2s', flexShrink: 0 }}
-          className="hover-actions">
-          <button onClick={() => onTogglePin && onTogglePin(item.id)} title={item.pinnedFocus ? "Unpin from Focus" : "Pin to Focus"}
-            style={{ padding: '6px', border: 'none', background: item.pinnedFocus ? '#e8ebe7' : '#f5f3f0', borderRadius: 8, cursor: 'pointer', color: '#78716c', fontSize: 14 }}>📌</button>
-          <button onClick={() => setShowComments(!showComments)}
-            style={{ padding: '6px', border: 'none', background: '#f5f3f0', borderRadius: 8, cursor: 'pointer', color: '#78716c', fontSize: 14, position: 'relative' }}>
-            💬{item.comments && item.comments.length > 0 && (
-              <span style={{ position: 'absolute', top: 2, right: 2, width: 6, height: 6, borderRadius: '50%', background: '#6b7869' }} />
+        {isMobile ? (
+          <div className="mobile-actions" ref={actionsRef}>
+            <button
+              type="button"
+              className="mobile-actions-btn"
+              aria-label="Actions"
+              onClick={(e) => {
+                e.stopPropagation();
+                setActionsOpen((v) => !v);
+              }}
+            >
+              ⋯
+            </button>
+            {actionsOpen && (
+              <div
+                className="mobile-actions-menu"
+                role="menu"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    onTogglePin(item.id);
+                    setActionsOpen(false);
+                  }}
+                >
+                  {item.pinned ? "Unpin" : "Pin"}
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setShowComments(true);
+                    setActionsOpen(false);
+                  }}
+                >
+                  Comment
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    onEdit(item);
+                    setActionsOpen(false);
+                  }}
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="danger"
+                  onClick={() => {
+                    onDelete(item.id);
+                    setActionsOpen(false);
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
             )}
-          </button>
-          <button onClick={() => onEdit(item)}
-            style={{ padding: '6px', border: 'none', background: '#f5f3f0', borderRadius: 8, cursor: 'pointer', color: '#78716c', fontSize: 14 }}>✏️</button>
-          <button onClick={() => onDelete(item.id)}
-            style={{ padding: '6px', border: 'none', background: '#f5f3f0', borderRadius: 8, cursor: 'pointer', color: '#78716c', fontSize: 14 }}>🗑</button>
-        </div>
+          </div>
+        ) : (
+          <div className="hover-actions" aria-hidden="true">
+            <button
+              className="action-btn"
+              onClick={() => onTogglePin(item.id)}
+              title={item.pinned ? "Unpin" : "Pin"}
+            >
+              📌
+            </button>
+            <button
+              className="action-btn"
+              onClick={() => setShowComments(true)}
+              title="Comment"
+            >
+              💬
+            </button>
+            <button className="action-btn" onClick={() => onEdit(item)} title="Edit">
+              ✏️
+            </button>
+            <button className="action-btn" onClick={() => onDelete(item.id)} title="Delete">
+              🗑️
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Comments panel */}
